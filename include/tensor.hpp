@@ -79,7 +79,7 @@ public:
 
   void* map(cl::CommandQueue q, bool blocking = false, bool read_only = false, cl_int *err = nullptr) {
     if (!_mapped) {
-      _mapped_ptr = q.enqueueMapBuffer(_buffer, blocking, read_only ? CL_MAP_READ : CL_MAP_WRITE, 0, buffer_size, nullptr, nullptr, err);
+      //_mapped_ptr = q.enqueueMapBuffer(_buffer, blocking, read_only ? CL_MAP_READ : CL_MAP_WRITE, 0, buffer_size, nullptr, nullptr, err);
       _mapped_read_only = read_only;
       _mapped = (err == CL_SUCCESS);
     }

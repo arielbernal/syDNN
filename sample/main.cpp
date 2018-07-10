@@ -8,6 +8,39 @@ int main() {
   s.range(-4, 2);
   std::cout << s << std::endl;
 
+
+  std::string platform_name = "Intel";
+  std::vector<cl::Platform> all_platforms;
+  cl::Platform::get(&all_platforms);
+
+  cl::Platform default_platform = all_platforms[0];
+  std::cout << "Using platform: "<<default_platform.getInfo<CL_PLATFORM_NAME>()<<"\n";
+
+  std::vector<cl::Device> all_gpu_devices;
+  default_platform.getDevices(CL_DEVICE_TYPE_GPU, &all_gpu_devices);
+  if(all_gpu_devices.size() == 0)
+    throw std::runtime_error("TestEnvironment() : No gpu devices found");
+
+  cl::Device default_device = all_gpu_devices[0];
+  std::cout<< "Using device: "<<default_device.getInfo<CL_DEVICE_NAME>()<<"\n";
+  cl::Context clContext = cl::Context({default_device});
+  cl::CommandQueue clQueue = cl::CommandQueue(clContext, default_device);
+
+  std::vector<cl::Device>ctxs =  clContext.getInfo<CL_CONTEXT_DEVICES>();
+  for (auto& c : ctxs) {
+     std::cout << c.getInfo<CL_DEVICE_NAME>() << std::endl;
+  }
+
+  cl_int err = CL_SUCCESS;
+  cl::Buffer f = cl::Buffer(clContext, CL_MEM_READ_WRITE, 90, nullptr, &err);
+  std::cout << (err == CL_SUCCESS) << std::endl;
+
+  Tensor t(clContext, {3, 3});
+  t.allocate();
+
+
+
+
   // std::cout << type_size(clrt_fp16) << std::endl;
   // std::cout << layout_order(clrt_bfyx) << std::endl;
   // uint32_t a = 3;

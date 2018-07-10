@@ -1,6 +1,6 @@
 #pragma once
 #include <type_traits>
-#include <CL/cl2.hpp>
+#include <CL/cl.hpp>
 
 namespace clRT
 {
