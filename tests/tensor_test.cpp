@@ -71,7 +71,7 @@ TEST(Tensor_test, unmap) {
 TEST(Tensor_test, unmap_write) {
   Tensor t(clContext, {3, 3});
   t.allocate(CL_MEM_READ_WRITE);
-  float* ptr1 = t.map<float>(clQueue);
+  float* ptr1 = t.map<float>(clQueue, true, CL_MAP_WRITE);
   ASSERT_EQ(t.mapped(), true);
   ptr1[6] = 33;
   t.unmap(clQueue);

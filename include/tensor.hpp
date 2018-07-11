@@ -69,11 +69,7 @@ public:
   }
 
   bool mapped() const {
-    return _mapped;
-  }
-
-  bool mapped_read_only() const {
-    return _mapped_read_only;
+    return _mapped_ptr != nullptr;
   }
 
   template<typename T = void>
@@ -91,28 +87,33 @@ public:
   }
 
   template<typename T = void>
-  T* map(cl::CommandQueue q, bool blocking = true, bool read_only = false,
+  T* map(cl::CommandQueue q, bool blocking = true, cl_map_flags flags = CL_MAP_READ,
               const std::vector<cl::Event>* events = nullptr, cl::Event* event = nullptr, cl_int* err = nullptr) {
-    if (!_mapped) {
-      cl_int error;
-      _mapped_ptr = q.enqueueMapBuffer(_buffer, blocking, read_only ? CL_MAP_READ : CL_MAP_WRITE, 0, _buffer_size, events, event, &error);
-      _mapped_read_only = read_only;
-      _mapped = (error == CL_SUCCESS);
-      if(err != nullptr) *err = error;
-    }
+    if (_mapped_ptr != nullptr)
+      throw std::runtime_error("Tensor::map");
+    cl_int error;
+    _mapped_ptr = q.enqueueMapBuffer(_buffer, blocking, flags, 0, _buffer_size, events, event, &error);
+    _mapped_flags = flags;
+    if(err != nullptr) *err = error;
     return static_cast<T*>(_mapped_ptr);
   }
 
   cl_int unmap(cl::CommandQueue q, bool blocking = true, const std::vector<cl::Event>* events = nullptr, cl::Event* event = nullptr) {
     cl_int err = CL_SUCCESS;
-    if (_mapped) {
+    if (_mapped_ptr != nullptr) {
       err = q.enqueueUnmapMemObject(_buffer, _mapped_ptr, events, event);
       if (blocking) {
         q.finish();
       }
-      _mapped = false;
+      _mapped_ptr = nullptr;
     }
     return err;
+  }
+
+
+  template<typename T>
+  void write(size_t idx, T value) {
+    //_mapped_ptr[idx]
   }
 
 protected:
@@ -142,8 +143,7 @@ private:
   size_t _buffer_size;
   bool _allocated = false;
   cl::Buffer _buffer;
-  bool _mapped = false;
-  bool _mapped_read_only = false;
+  cl_map_flags _mapped_flags = CL_MAP_READ;
   void* _mapped_ptr = nullptr;
 };
 
