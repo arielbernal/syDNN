@@ -31,12 +31,9 @@ int main() {
      std::cout << c.getInfo<CL_DEVICE_NAME>() << std::endl;
   }
 
-  cl_int err = CL_SUCCESS;
-  cl::Buffer f = cl::Buffer(clContext, CL_MEM_READ_WRITE, 90, nullptr, &err);
-  std::cout << (err == CL_SUCCESS) << std::endl;
-
   Tensor t(clContext, {3, 3});
   t.allocate();
+  std::cout << t << std::endl;
 
 
 

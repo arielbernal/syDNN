@@ -33,10 +33,10 @@ public:
 
   std::string to_string() const {
     std::stringstream ret;
-    ret << "Tensor shape = " << _shape << " padding = " << _padding << " alignment = " << _alignment << " ";
-    ret << "Type = " << type_name(_type);
-    // ret << (is_allocated() ? "Allocated" : "Not Allocated") << ", ";
-    // ret << (is_mapped() ? "Mapped" : "Unmapped");
+    ret << "Tensor shape = " << _shape << ", padding = " << _padding << ", alignment = " << _alignment << ", ";
+    ret << type_name(_type) << ", ";
+    ret << (allocated() ? "allocated" : "not-allocated") << ", ";
+    ret << (mapped() ? "mapped" : "unmapped");
     return ret.str();
   }
 
@@ -60,19 +60,19 @@ public:
     return _internal;
   }
 
-  size_t buffer_size() {
+  size_t buffer_size() const {
     return _buffer_size;
   }
 
-  bool allocated() {
+  bool allocated() const {
     return _allocated;
   }
 
-  bool mapped() {
+  bool mapped() const {
     return _mapped;
   }
 
-  bool mapped_read_only() {
+  bool mapped_read_only() const {
     return _mapped_read_only;
   }
 
