@@ -15,7 +15,6 @@ TEST(Tensor_test, constructor_runtime_error) {
     FAIL() << "Expected std::runtime_error";
   }
   catch(const std::runtime_error& err) {
-    EXPECT_EQ(err.what(), std::string("Size::add"));
   }
   catch(...) {
     FAIL() << "Expected std::runtime_error";
@@ -47,4 +46,36 @@ TEST(Tensor_test, allocate_host_ptr) {
   std::vector<float> v(9);
   t.allocate(CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR, &v[0]);
   ASSERT_EQ(t.allocated(), true);
+}
+
+TEST(Tensor_test, map) {
+  Tensor t(clContext, {3, 3});
+  std::vector<float> v(9);
+  t.allocate(CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR, &v[0]);
+  cl_int err = CL_TRUE;
+  void* ptr = t.map(clQueue);
+  ASSERT_EQ((void*)&v[0], ptr);
+  ASSERT_EQ(t.mapped(), true);
+}
+
+TEST(Tensor_test, unmap) {
+  Tensor t(clContext, {3, 3});
+  std::vector<float> v(9);
+  t.allocate(CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR, &v[0]);
+  float* ptr = t.map<float>(clQueue);
+  ASSERT_EQ(&v[0], ptr);
+  t.unmap(clQueue);
+  ASSERT_EQ(t.mapped(), false);
+}
+
+TEST(Tensor_test, unmap_write) {
+  Tensor t(clContext, {3, 3});
+  t.allocate(CL_MEM_READ_WRITE);
+  float* ptr1 = t.map<float>(clQueue);
+  ASSERT_EQ(t.mapped(), true);
+  ptr1[6] = 33;
+  t.unmap(clQueue);
+  ASSERT_EQ(t.mapped(), false);
+  float* ptr2 = t.map<float>(clQueue);
+  ASSERT_EQ(ptr2[6], 33);
 }

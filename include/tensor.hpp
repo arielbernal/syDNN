@@ -64,26 +64,55 @@ public:
     return _buffer_size;
   }
 
-  cl_int allocate(cl_mem_flags flags = CL_MEM_READ_WRITE, void* host_ptr = nullptr) {
-    if (_allocated)
-      throw std::runtime_error("Tensor::allocate");
-    cl_int err;
-    _buffer = cl::Buffer(_context, flags, _buffer_size, host_ptr, &err);
-    _allocated = (err == CL_SUCCESS);
-    return err;
-  }
-
   bool allocated() {
     return _allocated;
   }
 
-  void* map(cl::CommandQueue q, bool blocking = false, bool read_only = false, cl_int *err = nullptr) {
+  bool mapped() {
+    return _mapped;
+  }
+
+  bool mapped_read_only() {
+    return _mapped_read_only;
+  }
+
+  template<typename T = void>
+  T* mapped_ptr() {
+    return static_cast<T*>(_mapped_ptr);
+  }
+
+  void allocate(cl_mem_flags flags = CL_MEM_READ_WRITE, void* host_ptr = nullptr, cl_int* err = nullptr) {
+    if (_allocated)
+      throw std::runtime_error("Tensor::allocate");
+    cl_int error;
+    _buffer = cl::Buffer(_context, flags, _buffer_size, host_ptr, &error);
+    _allocated = (error == CL_SUCCESS);
+    if (err != nullptr) *err = error;
+  }
+
+  template<typename T = void>
+  T* map(cl::CommandQueue q, bool blocking = true, bool read_only = false,
+              const std::vector<cl::Event>* events = nullptr, cl::Event* event = nullptr, cl_int* err = nullptr) {
     if (!_mapped) {
-      //_mapped_ptr = q.enqueueMapBuffer(_buffer, blocking, read_only ? CL_MAP_READ : CL_MAP_WRITE, 0, buffer_size, nullptr, nullptr, err);
+      cl_int error;
+      _mapped_ptr = q.enqueueMapBuffer(_buffer, blocking, read_only ? CL_MAP_READ : CL_MAP_WRITE, 0, _buffer_size, events, event, &error);
       _mapped_read_only = read_only;
-      _mapped = (err == CL_SUCCESS);
+      _mapped = (error == CL_SUCCESS);
+      if(err != nullptr) *err = error;
     }
-    return _mapped_ptr;
+    return static_cast<T*>(_mapped_ptr);
+  }
+
+  cl_int unmap(cl::CommandQueue q, bool blocking = true, const std::vector<cl::Event>* events = nullptr, cl::Event* event = nullptr) {
+    cl_int err = CL_SUCCESS;
+    if (_mapped) {
+      err = q.enqueueUnmapMemObject(_buffer, _mapped_ptr, events, event);
+      if (blocking) {
+        q.finish();
+      }
+      _mapped = false;
+    }
+    return err;
   }
 
 protected:
@@ -117,47 +146,5 @@ private:
   bool _mapped_read_only = false;
   void* _mapped_ptr = nullptr;
 };
-
-
-
-
-
-//   cl_int unmap(cl::CommandQueue q, bool blocking = false) {
-//     cl_int err = CL_SUCCESS;
-//     if (mapped) {
-//       cl_int err = q.enqueueUnmapMemObject(buffer, mapped_ptr);
-//       if (blocking) {
-//         q.finish();
-//       }
-//       mapped = false;
-//     }
-//     return err;
-//   }
-
-//   bool is_mapped() const {
-//     return mapped;
-//   }
-
-//   bool is_mapped_read_only() {
-//     return mapped_read_only;
-//   }
-
-
-// private:
-//   cl::Context context;
-//   Type type;
-//   Size size;       // tensor size (elements)
-//   Size padding;    // padding around the tensor (elements)
-//   Size alignment;  // tensor aligment (elements)
-//   Size total_size; // tensor align(size + 2 * padding, alignment) (elements)
-//   size_t buffer_size;             // opencl flatten buffer size (bytes)
-
-//   bool allocated = false;
-//   bool mapped = false;
-//   bool mapped_read_only = false;
-//   void* mapped_ptr = nullptr;
-//   cl_mem_flags flags = 0;
-//   cl::Buffer buffer;
-// };
 
 } // namespace clRT

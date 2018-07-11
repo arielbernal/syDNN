@@ -38,7 +38,7 @@ template <typename T>
 struct disable_if<true, T> {};
 
 
-inline const char* OpenCLError(cl_int err)
+inline const char* OpenCLErrorString(cl_int err)
 {
     switch(err)
     {
@@ -92,5 +92,25 @@ inline const char* OpenCLError(cl_int err)
     }
     return "CL_UNKOWN_ERROR";
 }
+
+
+namespace detail
+{
+
+static inline cl_int errorHandler(cl_int err, const char* errorStr = nullptr)
+{
+#if defined(__CL_ENABLE_EXCEPTIONS)
+    if(err != CL_SUCCESS)
+        throw Error(err, errStr);
+    return err;
+#else
+    errorStr = nullptr;
+    return err;
+#endif // __CL_ENABLE_EXCEPTIONS
+}
+
+} // namespace clRT
+
+
 
 } // namespace clRT

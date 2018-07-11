@@ -37,23 +37,4 @@ static std::string type_name(const Type& type)
   return type_map.at(type);
 }
 
-enum Layout:int32_t {
-  clrt_bfyx, // default format
-  clrt_bfxy,
-  clrt_fbyx,
-  clrt_bfx,
-  clrt_x
-};
-
-static Size layout_order(const Layout& layout)
-{
-  static const std::unordered_map<int32_t, Size> layout_map {
-    {clrt_bfyx, {0, 1, 2, 3}}, // default format in reverse order
-    {clrt_bfxy, {1, 0, 2, 3}},
-    {clrt_fbyx, {0, 1, 3, 2}},
-    {clrt_bfx,  {0, 1, 2}},
-  };
-  return layout_map.at(layout);
-}
-
 } // namespace clRT
