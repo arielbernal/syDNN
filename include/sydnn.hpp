@@ -3,7 +3,7 @@
 #include <unordered_map>
 #include <size.hpp>
 
-namespace clRT {
+namespace syDNN {
 
 enum Type : int32_t {
   clrt_fp16,
@@ -37,4 +37,4 @@ static std::string type_name(const Type& type)
   return type_map.at(type);
 }
 
-} // namespace clRT
+} // namespace syDNN

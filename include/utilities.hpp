@@ -2,7 +2,7 @@
 #include <type_traits>
 #include <CL/cl.hpp>
 
-namespace clRT
+namespace syDNN
 {
 
 inline size_t align(size_t val, size_t alignment)
@@ -97,6 +97,7 @@ inline const char* OpenCLErrorString(cl_int err)
 namespace detail
 {
 
+// TODO: fix error handling with optimal exceptions
 static inline cl_int errorHandler(cl_int err, const char* errorStr = nullptr)
 {
 #if defined(__CL_ENABLE_EXCEPTIONS)
@@ -109,8 +110,8 @@ static inline cl_int errorHandler(cl_int err, const char* errorStr = nullptr)
 #endif // __CL_ENABLE_EXCEPTIONS
 }
 
-} // namespace clRT
+} // namespace detail
 
 
 
-} // namespace clRT
+} // namespace syDNN

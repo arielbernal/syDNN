@@ -2,11 +2,11 @@
 
 #include <iterator>
 #include <iostream>
-#include <clrt.hpp>
+#include <sydnn.hpp>
 #include <size.hpp>
 #include <utilities.hpp>
 
-namespace clRT {
+namespace syDNN {
 
 class Tensor {
 public:
@@ -174,4 +174,4 @@ private:
   void* _mapped_ptr = nullptr;
 };
 
-} // namespace clRT
+} // namespace syDNN

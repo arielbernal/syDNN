@@ -6,7 +6,7 @@ using half_t = uint16_t;
 
 
 int main() {
-  using namespace clRT;
+  using namespace syDNN;
 
   std::string platform_name = "Intel";
   std::vector<cl::Platform> all_platforms;

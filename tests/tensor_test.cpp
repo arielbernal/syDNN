@@ -1,7 +1,7 @@
 #include <tensor.hpp>
 #include <common/test_common.hpp>
 
-using namespace clRT;
+using namespace syDNN;
 
 // TEST(Tensor_test, constructor) {
 //   Tensor t(clContext, {1, 2, 3}, {1, 2, 3}, {1, 2, 3});

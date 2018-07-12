@@ -1,7 +1,7 @@
 #include <size.hpp>
 #include <common/test_common.hpp>
 
-using namespace clRT;
+using namespace syDNN;
 
 TEST(Size_test, initialization_list) {
   int32_t a[] = {1, 2, 3};

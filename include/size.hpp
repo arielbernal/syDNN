@@ -7,7 +7,7 @@
 #include <sstream>
 #include <utilities.hpp>
 
-namespace clRT
+namespace syDNN
 {
 
 using size_value_type = int32_t;
@@ -186,8 +186,8 @@ inline Size align(const Size& v, const Size& alignment) {
     throw std::runtime_error("align(Size&, Size&)");
   Size s = Size::Zeros(v.size());
   for (size_t i = 0; i < s.size(); ++i)
-    s[i] = clRT::align(v[i], alignment[i]);
+    s[i] = syDNN::align(v[i], alignment[i]);
   return s;
 }
 
-} // namespace clRT
+} // namespace syDNN
