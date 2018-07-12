@@ -4,9 +4,8 @@
 
 using half_t = uint16_t;
 
+
 int main() {
-
-
   using namespace clRT;
 
   std::string platform_name = "Intel";
@@ -31,15 +30,27 @@ int main() {
      std::cout << c.getInfo<CL_DEVICE_NAME>() << std::endl;
   }
 
-  Tensor t(clContext, {3, 6});
-  t.allocate();
-  float* ptr = t.map<float>(clQueue);
-  std::cout << t << " " << ptr << std::endl;
-  Size pitch = t.pitch();
-  std::cout << pitch << "   " << t(2, 3) << " " << t.index({2, 3}) << std::endl;
-  std::cout << "Value at = " << t<float>(2, 3) << std::endl;
-  Size s {2, 3};
-  std::cout << "Value at " << s << " = " << t.at<float>(s) << std::endl;
+  Tensor t(clContext, {3, 4}, {1,1});
+  t.allocate(CL_MEM_READ_WRITE);
+  t.map(clQueue, true, CL_MAP_WRITE);
+  std::cout << "t = " << t << " " << t.pitch() << std::endl;
+
+  std::cout << "Value at = " << t.at<float>(2, 3) << std::endl;
+  t.at<float>(2, 3) = 4;
+  std::cout << "Value at = " << t.at<float>(2, 3) << std::endl;
+  for (int j = 0; j < 4; ++j)
+    for (int i = 0; i < 3; ++i)
+      t.at<float>(i, j) = i + j * 3;
+
+  t.unmap(clQueue);
+  t.map(clQueue);
+
+  for (int j = -1; j < 5; ++j) {
+    for (int i = -1; i < 4; ++i) {
+      std::cout << t.at<float>(i, j) << " ";
+    }
+    std::cout << "\n";
+  }
 
 
   return 0;
