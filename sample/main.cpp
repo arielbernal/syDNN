@@ -1,7 +1,12 @@
 #include <iostream>
 #include <tensor.hpp>
 
+
+using half_t = uint16_t;
+
 int main() {
+
+
   using namespace clRT;
 
   std::string platform_name = "Intel";
@@ -26,14 +31,15 @@ int main() {
      std::cout << c.getInfo<CL_DEVICE_NAME>() << std::endl;
   }
 
-  Tensor t(clContext, {3, 3});
+  Tensor t(clContext, {3, 6});
   t.allocate();
   float* ptr = t.map<float>(clQueue);
   std::cout << t << " " << ptr << std::endl;
-  t.unmap(clQueue);
-  std::cout << t << " " << t.mapped_ptr() << " " << ptr << std::endl;
-  half_t s = 16.33;
-
+  Size pitch = t.pitch();
+  std::cout << pitch << "   " << t(2, 3) << " " << t.index({2, 3}) << std::endl;
+  std::cout << "Value at = " << t<float>(2, 3) << std::endl;
+  Size s {2, 3};
+  std::cout << "Value at " << s << " = " << t.at<float>(s) << std::endl;
 
 
   return 0;

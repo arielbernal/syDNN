@@ -1,6 +1,7 @@
 #pragma once
 
 #include <iterator>
+#include <iostream>
 #include <clrt.hpp>
 #include <size.hpp>
 #include <utilities.hpp>
@@ -110,11 +111,45 @@ public:
     return err;
   }
 
-
-  template<typename T>
-  void write(size_t idx, T value) {
-    //_mapped_ptr[idx]
+  template <typename T, typename... Rest>
+  size_t index(T t, Rest... rest) const {
+    if ((sizeof...(Rest) + 1) != _pitch.size())
+      throw std::runtime_error("Tensor::buffer_index");
+    T arr[sizeof...(Rest) + 1] = { t, rest...};
+    size_t acc = 0;
+    for(size_t i = 0; i < _pitch.size(); ++i)
+      acc += _pitch[i] * arr[i];
+    return acc;
   }
+
+  size_t index(const Size& p) const {
+    if (p.size() != _pitch.size())
+      throw std::runtime_error("Tensor::buffer_index");
+    size_t acc = 0;
+    for (int i = 0; i < _pitch.size(); ++i)
+      acc += _pitch[i] * p[i];
+    return acc;
+  }
+
+  template <typename R, typename T, typename... Rest>
+  R operator()(T t, Rest... rest) const {
+    size_t idx = index(t, rest...);
+    return static_cast<R*>(_mapped_ptr)[idx];
+  }
+
+  template <typename R>
+  R operator()(const Size& p) const{
+    size_t idx = index(p);
+    return static_cast<R*>(_mapped_ptr)[idx];
+  }
+
+  // size_value_type& operator[](size_t n) {
+  //   return _arr[n];
+  // }
+
+  // size_value_type operator[](size_t n) const {
+  //   return _arr[n];
+  // }
 
 protected:
   void update_buffer_layout() {
