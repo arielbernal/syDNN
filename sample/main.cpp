@@ -5,6 +5,7 @@
 using half_t = uint16_t;
 
 
+
 int main() {
   using namespace syDNN;
 
@@ -51,6 +52,29 @@ int main() {
     }
     std::cout << "\n";
   }
+
+  // Full control
+  Program program = Program(context, source);
+  program.build(devices);
+  Kernel kernel(program, "vector_add");
+
+  struct DNNKernel {
+    cl::Kernel kernel;
+    cl::Range global;
+    cl::Range local;
+    cl::Range offset;
+  }
+
+  // Create program, compile, create kernel, set_args.
+  getInfo<conv2d>(tin.shape(), W.shape(), stride, padding);
+  DNNKernel k = conv2d(clContext, tin, W, b, stride, tout);
+
+  k.enqueue(clQueue); // or 
+  clQueue.enqueueNDRange(k.kernel, k.offset, k.glogal, k.local, events, event)
+
+  conv2d(graph, tin, kernel_size, stride, padding, tout);
+  relu(graph, tin);
+
 
 
   return 0;
