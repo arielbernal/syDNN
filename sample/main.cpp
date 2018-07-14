@@ -1,6 +1,6 @@
 #include <iostream>
 #include <tensor.hpp>
-
+#include <conv2d.hpp>
 
 using half_t = uint16_t;
 
@@ -53,28 +53,20 @@ int main() {
     std::cout << "\n";
   }
 
+
+//----------------------------------------
+// API design
+//----------------------------------------
   // Full control
-  Program program = Program(context, source);
-  program.build(devices);
-  Kernel kernel(program, "vector_add");
-
-  struct DNNKernel {
-    cl::Kernel kernel;
-    cl::Range global;
-    cl::Range local;
-    cl::Range offset;
-  }
-
   // Create program, compile, create kernel, set_args.
-  getInfo<conv2d>(tin.shape(), W.shape(), stride, padding);
-  DNNKernel k = conv2d(clContext, tin, W, b, stride, tout);
+  Convolution2DInfo info = get_info<conv2d>(Input_shape, Weights_shape, stride, padding);
+  Kernel k = conv_2d(clContext, tin, W, b, stride, tout);
+  k.enqueue(clQueue); // or  clQueue.enqueueNDRange(k.kernel, k.offset, k.glogal, k.local, events, event)
 
-  k.enqueue(clQueue); // or 
-  clQueue.enqueueNDRange(k.kernel, k.offset, k.glogal, k.local, events, event)
-
+// Graph API
   conv2d(graph, tin, kernel_size, stride, padding, tout);
   relu(graph, tin);
-
+//----------------------------------------
 
 
   return 0;
