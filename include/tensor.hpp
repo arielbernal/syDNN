@@ -113,7 +113,7 @@ public:
 
   template <typename T, typename... Rest>
   size_t index(T t, Rest... rest) const {
-    if ((syDNNsizeof...(Rest) + 1) != _pitch.size())
+    if ((sizeof...(Rest) + 1) != _pitch.size())
       throw std::runtime_error("Tensor::buffer_index");
     T arr[sizeof...(Rest) + 1] = { t, rest...};
     size_t acc = 0;
