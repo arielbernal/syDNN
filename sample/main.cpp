@@ -31,41 +31,24 @@ int main() {
      std::cout << c.getInfo<CL_DEVICE_NAME>() << std::endl;
   }
 
-  Tensor t(clContext, {3, 4}, {1,1});
-  t.allocate(CL_MEM_READ_WRITE);
-  t.map(clQueue, true, CL_MAP_WRITE);
-  std::cout << "t = " << t << " " << t.pitch() << std::endl;
-
-  std::cout << "Value at = " << t.at<float>(2, 3) << std::endl;
-  t.at<float>(2, 3) = 4;
-  std::cout << "Value at = " << t.at<float>(2, 3) << std::endl;
-  for (int j = 0; j < 4; ++j)
-    for (int i = 0; i < 3; ++i)
-      t.at<float>(i, j) = i + j * 3;
-
-  t.unmap(clQueue);
-  t.map(clQueue);
-
-  for (int j = -1; j < 5; ++j) {
-    for (int i = -1; i < 4; ++i) {
-      std::cout << t.at<float>(i, j) << " ";
-    }
-    std::cout << "\n";
-  }
+  Tensor X(clContext, {12, 12, 1, 1});
+  Tensor W(clContext, {3, 3, 3});
+  Tensor b(clContext, {3, 3, 3});
 
 
+  Kernel k = conv_2d(clContext, tin, W, b, stride, tout);
 //----------------------------------------
 // API design
 //----------------------------------------
   // Full control
   // Create program, compile, create kernel, set_args.
-  Convolution2DInfo info = get_info<conv2d>(Input_shape, Weights_shape, stride, padding);
-  Kernel k = conv_2d(clContext, tin, W, b, stride, tout);
-  k.enqueue(clQueue); // or  clQueue.enqueueNDRange(k.kernel, k.offset, k.glogal, k.local, events, event)
+  // Convolution2DInfo info = get_info<conv2d>(Input_shape, Weights_shape, stride, padding);
+  // Kernel k = conv_2d(clContext, tin, W, b, stride, tout);
+  // k.enqueue(clQueue); // or  clQueue.enqueueNDRange(k.kernel, k.offset, k.glogal, k.local, events, event)
 
 // Graph API
-  conv2d(graph, tin, kernel_size, stride, padding, tout);
-  relu(graph, tin);
+  // conv2d(graph, tin, kernel_size, stride, padding, tout);
+  // relu(graph, tin);
 //----------------------------------------
 
 
