@@ -28,23 +28,23 @@ using vec3df = vec3d<float>;
 using vec4df = vec4d<float>;
 
 template<typename T>
-void conv2d_ref(vec4d<T>& input, vec4d<T>& filter, vec1d<T> bias, int stride_x = 1, int stride_y = 1, 
+vec4d<T> conv2d_ref(vec4d<T>& input, vec4d<T>& filter, vec1d<T> bias, int stride_x = 1, int stride_y = 1,
                 int input_padding_x = 0, int input_padding_y = 0, int output_padding_x = 0, int output_padding_y = 0)
 {
   size_t batch_size = input.size();
   size_t feature_size = input[0].size();
-  size_t input_y = input[0][0].size() - 2 * input_padding_y;
-  size_t input_x = input[0][0][0].size() - 2 * input_padding_y;
+  size_t input_y = input[0][0].size();
+  size_t input_x = input[0][0][0].size();
   size_t bias_size = bias.size();
 
   size_t output_filter_size = filter.size();
   size_t input_filter_size = filter[0].size();
   size_t filter_y = filter[0][0].size();
   size_t filter_x = filter[0][0][0].size();
-  size_t output_y = 1 + (input_y + 2 * input_padding_y - filter_y) / stride_y + 2 * output_padding_y;
-  size_t output_x = 1 + (input_x + 2 * input_padding_x - filter_x) / stride_x + 2 * output_padding_x;
+  size_t output_y = 1 + (input_y - filter_y) / stride_y + 2 * output_padding_y;
+  size_t output_x = 1 + (input_x - filter_x) / stride_x + 2 * output_padding_x;
 
-  if (input_filter_size != feature_size) 
+  if (input_filter_size != feature_size)
     std::cout << "Error invalid filter size\n";
 
   std::cout << "input  = [" << batch_size << ", " << feature_size << ", " << input_x << ", " << input_y << "]\n";
@@ -67,42 +67,75 @@ void conv2d_ref(vec4d<T>& input, vec4d<T>& filter, vec1d<T> bias, int stride_x =
                 if (ix < 0 || iy < 0) continue;
                 acc += input[b][fi][iy][ix] * filter[fo][fi][fy][fx];
               } // fx
-            } // fy         
+            } // fy
           } // fi
-          std::cout << acc << " ";
-          out[b][fo][y][x] = acc;
+          out[b][fo][y + output_padding_y][x + output_padding_x] = acc + bias[fo];
         } // x
-        std::cout << "\n";
       } // y
-      std::cout << "\n";
     } // fo
+  } // b'
+  return out;
+}
+
+
+void print(const vec4df& v) {
+  for (size_t b = 0; b < v.size(); ++b) {
+    for (size_t c = 0; c < v[0].size(); ++c) {
+      for (size_t y = 0; y < v[0][0].size(); ++y) {
+        for (size_t x = 0; x < v[0][0][0].size(); ++x) {
+          printf("%3.0f ", v[b][c][y][x]);
+        }
+        std::cout << "\n";
+      }
+      std::cout << "\n";
+    }
     std::cout << "\n";
-  } // b
+  }
 }
 
 int main() {
   using namespace syDNN;
 
-  vec4df input = 
+  vec4df input =
   {
     {
-      { {4, 3, 1, 0}, {2, 1, 0, 1}, {1, 2, 4, 1}, {3, 1, 0, 2} },
-      { {4, 3, 1, 0}, {2, 1, 0, 1}, {1, 2, 4, 1}, {3, 1, 0, 2} }
+      { {4, 3, 1, 0, 4}, {2, 1, 0, 1, 4}, {1, 2, 4, 1, 3}, {3, 1, 0, 2, 3}, {3, 1, 0, 2, 3} },
+      { {4, 3, 1, 0, 4}, {2, 1, 0, 1, 4}, {1, 2, 4, 1, 3}, {3, 1, 0, 2, 3}, {3, 1, 0, 2, 3} }
+    }
+  };
+
+  vec4df inputp =
+  {
+    {
+      { {0, 0, 0, 0, 0, 0, 0}, {0, 4, 3, 1, 0, 4, 0}, {0, 2, 1, 0, 1, 4, 0}, {0, 1, 2, 4, 1, 3, 0}, {0, 3, 1, 0, 2, 3, 0}, {0, 3, 1, 0, 2, 3, 0}, {0, 0, 0, 0, 0, 0, 0} },
+      { {0, 0, 0, 0, 0, 0, 0}, {0, 4, 3, 1, 0, 4, 0}, {0, 2, 1, 0, 1, 4, 0}, {0, 1, 2, 4, 1, 3, 0}, {0, 3, 1, 0, 2, 3, 0}, {0, 3, 1, 0, 2, 3, 0}, {0, 0, 0, 0, 0, 0, 0} }
     }
   };
 
   vec4df filter =
   {
     {
-      { {1, 0, 1}, {2, 1, 0}, {0, 0, 1} },
-      { {1, 0, 1}, {2, 1, 0}, {0, 0, 1} }
+      { {1, 0, 1}, {2, 1, 0}, {0, 0, 1} }, { {1, 0, 1}, {2, 1, 0}, {0, 0, 1} }
+    },
+    {
+      { {1, 0, 1}, {2, 1, 0}, {0, 0, 1} }, { {1, 0, 1}, {2, 1, 0}, {0, 0, 1} }
+    },
+    {
+      { {1, 0, 1}, {2, 1, 0}, {0, 0, 1} }, { {1, 0, 1}, {2, 1, 0}, {0, 0, 1} }
     }
   };
 
-  vec1df bias = { 0, 0 };
+  vec1df bias = { 1, 1, 1 };
 
-  conv2d_ref(input, filter, bias, 1, 1, 0, 0, 0, 0);
+  auto r0 = conv2d_ref(input, filter, bias, 1, 1, 0, 0, 0, 0);
+  print(r0);
+  std::cout << "--------------------------------\n";
+  auto r1 = conv2d_ref(inputp, filter, bias, 1, 1, 1, 1, 0, 0);
+  print(r1);
 
+  std::cout << "--------------------------------\n";
+  auto r2 = conv2d_ref(inputp, filter, bias, 1, 1, 4, 4, 1, 1);
+  print(r2);
 
   // std::string platform_name = "Intel";
   // std::vector<cl::Platform> all_platforms;
