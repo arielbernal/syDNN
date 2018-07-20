@@ -30,6 +30,19 @@ public:
     std::copy(c_arr, c_arr + _size, std::begin(_arr));
   }
 
+  template<typename T, class = typename std::enable_if<std::is_same<T, std::vector<size_t>>::value>::type>
+  Size(const T& arr)
+  : _size(arr.size())
+  {
+    std::copy(&arr[0], &arr[0] + _size, std::begin(_arr));
+  }
+
+  // Size(const std::initializer_list<int>& il)
+  // : _size(il.size())
+  // {
+  //   std::copy(il.begin(), il.end(), std::begin(_arr));
+  // }
+
   template<typename... Ts, class = typename std::enable_if<all_integral<Ts...>::value>::type>
   Size(Ts&&... ts)
   : _arr({std::forward<size_value_type>(ts)...})
@@ -79,6 +92,25 @@ public:
 
   static Size Range(size_value_type n) {
     return Range(0, n);
+  }
+
+  // TODO: sub_size to be tested and add exceptions
+  Size sub_size(size_t start, size_t end) const {
+    std::vector<size_t> v;
+    for (size_t i = start; i < end; ++i) v.push_back(_arr[i]);
+    return Size(v);
+  }
+
+  Size sub_left(size_t end) const {
+    std::vector<size_t> v;
+    for (size_t i = 0; i < end; ++i) v.push_back(_arr[i]);
+    return Size(v);
+  }
+
+  Size sub_right(size_t start) const {
+    std::vector<size_t> v;
+    for (size_t i = start; i < _size; ++i) v.push_back(_arr[i]);
+    return Size(v);
   }
 
   size_value_type& operator[](size_t n) {

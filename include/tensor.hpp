@@ -21,11 +21,11 @@ public:
     update_buffer_layout();
   }
 
-  Tensor(cl::Context context, const Size& size, const Size& padding, Type type = Type::clrt_fp32)
-  : Tensor(context, size, padding, Size::Fill(size.size(), 1), type) {}
+  Tensor(cl::Context context, const Size& shape, const Size& padding, Type type = Type::clrt_fp32)
+  : Tensor(context, shape, padding, Size::Fill(shape.size(), 1), type) {}
 
-  Tensor(cl::Context context, const Size& size, Type type = Type::clrt_fp32)
-  : Tensor(context, size, Size::Zeros(size.size()), Size::Fill(size.size(), 1), type) {}
+  Tensor(cl::Context context, const Size& shape, Type type = Type::clrt_fp32)
+  : Tensor(context, shape, Size::Zeros(shape.size()), Size::Fill(shape.size(), 1), type) {}
 
   friend std::ostream& operator<<(std::ostream& os, const Tensor& tensor) {
     os << tensor.to_string();

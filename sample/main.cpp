@@ -16,75 +16,193 @@ using vec3df = vec3d<float>;
 using vec4df = vec4d<float>;
 
 
-template<typename T, size_t N>
-struct VectorNDHelper {
-    using type = std::vector<typename VectorNDHelper<T, N - 1>::type>;
-};
+using namespace syDNN;
 
 template<typename T>
-struct VectorNDHelper<T, 1> {
-    using type = std::vector<T>;
-};
+class TensorRef {
+public:
+  TensorRef(const Size& shape, const Size& padding)
+  : _shape(shape)
+  , _padding(padding)
+  , _internal(shape + 2 * padding)
+  , _N(shape.size())
+  {
+    update_buffer_layout();
+    _data = new T[_buffer_size];
+    std::memset(_data, 0, _buffer_size * sizeof(T));
+  }
 
-template<typename T, size_t N>
-using VectorND = typename VectorNDHelper<T, N>::type;
+  ~TensorRef() {
+    delete _data;
+  }
 
-template<typename T>
-T createVectorND()
-{
-  return 0;
-}
+  size_t buffer_size() { return _buffer_size; }
 
-template<typename T, typename D, typename ...REST>
-auto createVectorND(D d, REST... rest)
-{
-  return VectorND<T, sizeof...(rest) + 1>(d, createVectorND<T>(rest...));
-}
+  Size shape() { return _shape; }
 
-template<size_t N>
-auto ZeroPadding() {
-  return std::array<size_t, N>();
-}
+  Size padding() { return _padding; }
 
-template<size_t N, typename T = float>
-struct TensorRef {
+  Size internal() { return _internal; }
 
-  template<size_t Nd>
-  void resize(VectorND<T, Nd>& v, const std::array<size_t, N>& size) {
-    if (Nd > 0) {
-      size_t d = size[N - Nd];
-      v.resize(d);
-      for (size_t i = 0; i < d; ++i)
-        resize<Nd - 1>(v[i]);
+  Size pitch() { return _pitch; }
+
+  T* data() { return _data; }
+
+  friend std::ostream& operator<<(std::ostream& os, const TensorRef& tensor) {
+    os << tensor.to_string();
+    return os;
+  }
+
+  std::string to_string() const {
+    std::stringstream ret;
+    ret << "TensorRef shape = " << _shape << ", padding = " << _padding << ", buffer_size = " << _buffer_size;
+    return ret.str();
+  }
+
+
+  std::string to_string1d(size_t idx, const Size& size, const std::string& format) const {
+    std::stringstream ret;
+    char str[100];
+    for (size_t x = 0; x < size[0]; ++x) {
+      snprintf(str, 100, format.c_str(), _data[idx + x ]);
+      ret << str << " ";
+    }
+    if (size[0] < _internal[_N - 1])
+      ret << "...";  
+    return ret.str();
+  }
+
+  std::string to_string2d(size_t idx, const Size& pitch, const Size& size, const std::string& format) const{
+    std::stringstream ret;
+    for (size_t h = 0; h < size[0]; ++h)
+      ret << to_string1d(idx + h * pitch[0], size.sub_right(1), format) << "\n";
+    if (size[0] < _internal[_N - 2])
+      ret << "...\n";
+    return ret.str();
+  }
+
+  std::string to_string3d(size_t idx, const Size& pitch, const Size& size, const std::string& format) const{
+    std::stringstream ret;
+    for (size_t c = 0; c < size[0]; ++c)
+      ret << to_string2d(idx + c * pitch[0], pitch.sub_right(1), size.sub_right(1), format) << "\n\n";
+    if (size[0] < _internal[_N - 3])
+      ret << "...\n\n";
+    return ret.str();
+  }
+
+  std::string to_string4d(size_t idx, const Size& pitch, const Size& size, const std::string& format) const{
+    std::stringstream ret;
+    for (size_t n = 0; n < size[0]; ++n)
+      ret << to_string3d(idx + n * pitch[0], pitch.sub_right(1), size.sub_right(1), format) << "\n\n";
+    if (size[0] < _internal[_N - 4])
+      ret << "...\n\n";
+    return ret.str();
+  }
+
+  std::string to_string(const Size& size, const std::string& format) const {
+    std::stringstream ret;
+    ret << to_string() << "\n";
+    int n = _shape.size();
+    
+    if (n == 4) { // assume NCHW
+      ret << to_string4d(0, _pitch, size, format);
+    }
+    else if(n == 3) {
+      ret << to_string3d(0, _pitch, size, format);
+    }
+    else if(n == 2) {
+      ret << to_string2d(0, _pitch, size, format);
+    }
+    else if(n == 1) {
+      ret << to_string1d(0, size, format);
+    }
+
+    return ret.str();
+  }
+
+  std::string to_string(const std::string& format) const {
+    return to_string(_internal, format);
+  }
+
+  template <typename K, typename... Rest>
+  size_t index(K t, Rest... rest) const {
+    if ((sizeof...(Rest) + 1) != _pitch.size())
+      throw std::runtime_error("TensorRef::buffer_index");
+    K arr[sizeof...(Rest) + 1] = { t, rest...};
+    size_t acc = 0;
+    for(size_t i = 0; i < _pitch.size(); ++i)
+      acc += _pitch[i] * (_padding[i] + arr[i]);
+    return acc;
+  }
+
+  size_t index(const Size& p) const {
+    if (p.size() != _pitch.size())
+      throw std::runtime_error("TensorRef::index");
+    size_t acc = 0;
+    for (int i = 0; i < _pitch.size(); ++i)
+      acc += _pitch[i] * (_padding[i] + p[i]);
+    return acc;
+  }
+
+  template <typename K, typename... Rest>
+  T& operator()(K t, Rest... rest) const {
+    size_t idx = index(t, rest...);
+    return *((_data) + idx);
+  }
+
+  template <typename Ret>
+  T& operator()(const Size& p) const{
+    size_t idx = index(p);
+    return *((_data) + idx);
+  }
+protected:
+    void update_buffer_layout() {
+    if (_internal.size() > 0) {
+      _pitch = Size::Zeros(_internal.size());
+      _pitch[_N - 1] = 1;
+      _buffer_size = _internal[_N - 1];
+      for (int i = _N - 2 ; i >= 0 ; --i) {
+        _pitch[i] = _pitch[i + 1] * _internal[i + 1];
+        _buffer_size *= _internal[i];
+      }
+    } else {
+      _buffer_size = 0;
     }
   }
 
-  TensorRef(const std::array<size_t, N>& size, const std::array<size_t, N>& padding = ZeroPadding<N>())
-  {
-    //createVectorND<T>(size...);
-    //static_assert(N == sizeof...(rest) + 1, "Constructor number of arguments different from tensor dimensionality");
-
-  }
-  void resize(const std::array<size_t, N>& size) {
-     resize<N>(data, size);
-  }
-
-  size_t dim() {
-    return N;
-  }
-
-  auto operator[](size_t idx) {
-    return data[idx];
-  }
-
-  VectorND<T, N> data;
+private:
+  T* _data;
+  Size _shape;
+  Size _padding;
+  Size _internal;
+  Size _pitch;
+  size_t _buffer_size;
+  size_t _N;
 };
 
+using TensorRefF = TensorRef<float>;
 
 int main() {
-  TensorRef<3> t({2, 3, 4});
-  //t[0][1][2] = 3;
-  t.resize({2, 3, 4});
+//   TensorRefF t({2, 3, 3});
+
+//   std::cout << t << std::endl;
+//   std::cout << t.pitch() << std::endl;
+//   std::cout << t.internal() << std::endl;
+//   //t(0, 0, 0, 0) = 30;
+//   // t(0, 0, 1, 1) = 10;
+//   // t(0, 0, 2, 2) = 40;
+//   // t(1, 1, 2, 2) = 40;
+//   // std::cout << t(0, 0, 0, 0) << std::endl;
+// //  std::cout << t.to_string("%4.0f") << "\n";
+
+
+  TensorRefF t1 ({2, 2, 3, 3}, Size::Zeros(4));
+  t1(0, 1, 1, 1) = 10;
+  std::cout << t1 << std::endl;
+  std::cout << t1.pitch() << std::endl;
+  std::cout << t1.internal() << std::endl;
+  std::cout << t1.to_string("%4.0f") << "\n";
+
 
   return 0;
 }
@@ -143,22 +261,6 @@ int main() {
 //   return out;
 // }
 
-
-// void print(const vec4df& v, const std::string& text = "") {
-//   std::cout << text << std::endl;
-//   for (size_t b = 0; b < v.size(); ++b) {
-//     for (size_t c = 0; c < v[0].size(); ++c) {
-//       for (size_t y = 0; y < v[0][0].size(); ++y) {
-//         for (size_t x = 0; x < v[0][0][0].size(); ++x) {
-//           printf("%4.0f ", v[b][c][y][x]);
-//         }
-//         std::cout << "\n";
-//       }
-//       std::cout << "\n";
-//     }
-//     std::cout << "\n";
-//   }
-// }
 
 
 // vec4df fillVec4df(size_t batch, size_t channel, size_t height, size_t width, float value = 0) {
