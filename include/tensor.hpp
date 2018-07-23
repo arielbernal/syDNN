@@ -42,20 +42,22 @@ public:
     return ret.str();
   }
 
-  Size shape() { return _shape; }
-  Size padding() { return _padding; }
-  Size alignment() { return _alignment; }
-  Size pitch() { return _pitch; }
+  Size shape() const { return _shape; }
+  Size padding() const { return _padding; }
+  Size alignment() const { return _alignment; }
+  Size pitch() const { return _pitch; }
   Size internal() { return _internal; }
-  size_t shape(size_t idx) { return _shape[idx]; }
-  size_t padding(size_t idx) { return _padding[idx]; }
-  size_t alignment(size_t idx) { return _alignment[idx]; }
-  size_t pitch(size_t idx) { return _pitch[idx]; }
-  size_t internal(size_t idx) { return _internal[idx]; }
+  size_t shape(size_t idx) const { return _shape[idx]; }
+  size_t padding(size_t idx) const { return _padding[idx]; }
+  size_t alignment(size_t idx) const { return _alignment[idx]; }
+  size_t pitch(size_t idx) const { return _pitch[idx]; }
+  size_t internal(size_t idx) const { return _internal[idx]; }
   size_t buffer_size() const { return _buffer_size; }
-  size_t dim() { return _shape.size(); }
+  size_t dim() const { return _shape.size(); }
   bool allocated() const { return _allocated; }
   bool mapped() const { return _mapped_ptr != nullptr; }
+
+  cl::Buffer buffer() const { return _buffer; }
 
   template<typename T = void>
   T* mapped_ptr() { return static_cast<T*>(_mapped_ptr); }
@@ -78,7 +80,7 @@ public:
     _mapped_ptr = static_cast<uint8_t*>(q.enqueueMapBuffer(_buffer, blocking, flags, 0, _buffer_size, events, event, &error));
     _mapped_flags = flags;
     if(err != nullptr) *err = error;
-    return static_cast<T*>(_mapped_ptr);
+    return reinterpret_cast<T*>(_mapped_ptr);
   }
 
   cl_int unmap(cl::CommandQueue q, bool blocking = true, const std::vector<cl::Event>* events = nullptr, cl::Event* event = nullptr) {
@@ -116,13 +118,13 @@ public:
   template <typename Ret, typename T, typename... Rest>
   Ret& at(T t, Rest... rest) const {
     size_t idx = index(t, rest...);
-    return *reinterpret_cast<Ret*>(_mapped_ptr + idx);
+    return reinterpret_cast<Ret*>(_mapped_ptr)[idx];
   }
 
   template <typename Ret>
   Ret& at(const Size& p) const{
     size_t idx = index(p);
-    return *reinterpret_cast<Ret*>(_mapped_ptr + idx);
+    return reinterpret_cast<Ret*>(_mapped_ptr)[idx];
   }
 
   void from_buffer(void* data) {
@@ -135,7 +137,7 @@ public:
   std::string to_string(const std::string& format, bool internal = false, size_t n = 0, size_t idx = 0) {
     if (n == _N) {
       char str[100];
-      snprintf(str, 100, format.c_str(), *reinterpret_cast<T*>(_mapped_ptr+idx));
+      snprintf(str, 100, format.c_str(), reinterpret_cast<T*>(_mapped_ptr)[idx]);
       return std::string(str) + " " ;
     }
     std::string ret;
@@ -152,8 +154,8 @@ protected:
   void update_buffer_layout() {
     if (_internal.size() > 0) {
       _pitch = Size::Zeros(_internal.size());
-      _pitch[_N - 1] = type_size(_type);;
-      _buffer_size = _pitch[_N - 1] * _internal[_N - 1];
+      _pitch[_N - 1] = 1;
+      _buffer_size = type_size(_type) * _internal[_N - 1];
       for (int i = _N - 2 ; i >= 0 ; --i) {
         _pitch[i] = _pitch[i + 1] * _internal[i + 1];
         _buffer_size *= _internal[i];
@@ -161,7 +163,7 @@ protected:
     } else {
       _buffer_size = 0;
     }
-  }  
+  }
 private:
   cl::Context _context;
   Size _shape;

@@ -31,6 +31,10 @@ if (CMAKE_VERSION VERSION_LESS 2.8.11)
             "${gmock_SOURCE_DIR}/include")
 endif()
 
+add_custom_target(copy-opencl-kernels ALL
+    COMMAND cmake -E copy_directory ${CMAKE_SOURCE_DIR}/opencl_kernels ${CMAKE_BINARY_DIR}/bin/opencl_kernels
+    DEPENDS ${TestExample})
+
 enable_testing()
 add_subdirectory(sample)
 add_subdirectory(tests)

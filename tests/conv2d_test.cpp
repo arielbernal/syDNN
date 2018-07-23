@@ -12,7 +12,6 @@ TensorRef<T> conv2d_ref(TensorRef<T>& input, TensorRef<T>& weights, TensorRef<T>
                       int stride_x = 1, int stride_y = 1, int dilation_y = 1, int dilation_x = 1)
 {
   size_t input_b = input.shape(0);
-  size_t input_c = input.shape(1);
   size_t input_y = input.shape(2);
   size_t input_x = input.shape(3);
   size_t input_padding_y = input.padding(2);
@@ -23,7 +22,7 @@ TensorRef<T> conv2d_ref(TensorRef<T>& input, TensorRef<T>& weights, TensorRef<T>
   size_t weights_y = weights.shape(2);
   size_t weights_x = weights.shape(3);
 
-  size_t output_b = input.shape(0);
+  size_t output_b = input_b;
   size_t output_c = weights_f;
   size_t output_y = 1 + (int(input_y) + 2 * input_padding_y - ((weights_y - 1) * dilation_y + 1)) / stride_y;
   size_t output_x = 1 + (int(input_x) + 2 * input_padding_x - ((weights_x - 1) * dilation_x + 1)) / stride_x;
@@ -39,8 +38,8 @@ TensorRef<T> conv2d_ref(TensorRef<T>& input, TensorRef<T>& weights, TensorRef<T>
           for (size_t fc = 0; fc < weights_c; ++fc) {
             for (size_t fy = 0; fy < weights_y; ++fy) {
               for (size_t fx = 0; fx < weights_x; ++fx) {
-                int iy = int(stride_y) * y + fy * dilation_y + input_padding_y;
-                int ix = int(stride_x) * x + fx * dilation_x + input_padding_x;
+                int iy = int(stride_y) * y + fy * dilation_y - input_padding_y;
+                int ix = int(stride_x) * x + fx * dilation_x - input_padding_x;
                 if (ix < 0 || iy < 0) continue;
                 acc += input(b, fc, iy, ix) * weights(c, fc, fy, fx);
               } // fx

@@ -34,14 +34,17 @@ int main() {
   std::cout << Xr.to_string("%4.0f") << std::endl;
   TensorRefF Wr = RandomTensorRef({3, 2, 3, 3}, {0, 0, 0, 0}, 1, 10);
   std::cout << Wr.to_string("%4.0f") << std::endl;
-  TensorRefF br = RandomTensorRef({3}, {0}, 1, 10);
+  TensorRefF br = RandomTensorRef({3}, {0}, 0, 0);
   std::cout << br.to_string("%4.0f") << std::endl;
+
+  TensorRefF Yr = conv2d_ref1(Xr, Wr, br, 0, 0, 1, 1, 1, 1);
+  std::cout << Yr.to_string("%4.0f") << std::endl;
 
 
   Tensor X(clContext, {1, 2, 5, 5}, {0, 0, 1, 1});
   Tensor W(clContext, {3, 2, 3, 3});
   Tensor b(clContext, {3});
-  Tensor Y(clContext, {1, 3, 3, 3});
+  Tensor Y(clContext, {1, 3, 5, 5}, {0, 0, 1, 1});
 
 
   b.allocate();
@@ -54,10 +57,25 @@ int main() {
   X.allocate();
   X.map(clQueue);
   X.from_buffer((void*)Xr.data());
-  std::cout << X.to_string<float>("%4.0f", false) << std::endl;
+  std::cout << X.to_string<float>("%4.0f", true) << std::endl;
+  X.unmap(clQueue);
 
-  std::string str_kernel = load_kernel("../../opencl_kernels/conv2d_naive.cl");
-  SyKernel k = get_kernel(clContext, )
+  W.allocate();
+  W.map(clQueue);
+  W.from_buffer((void*)Wr.data());
+  std::cout << W.to_string<float>("%4.0f", true) << std::endl;
+  W.unmap(clQueue);
+
+
+  Y.allocate();
+
+  SyKernel k = conv2d(clContext, X, W, Y, b, {1, 1}, {1, 1});
+  cl_int err = clQueue.enqueueNDRangeKernel(k.kernel, k.offset, k.gws, k.lws);
+  std::cout << "Kernel execution = " << OpenCLErrorString(err) << std::endl;
+
+  Y.map<float>(clQueue, true, CL_MAP_READ, nullptr, nullptr, &err);
+  std::cout << "Output buffer mapped = " << OpenCLErrorString(err) << std::endl;
+  std::cout << Y.to_string<float>("%4.0f", true) << std::endl;
 
 
 
