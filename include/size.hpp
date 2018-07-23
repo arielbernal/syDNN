@@ -5,6 +5,7 @@
 #include <cmath>
 #include <numeric>
 #include <sstream>
+#include <iostream>
 #include <utilities.hpp>
 
 namespace syDNN
@@ -35,6 +36,12 @@ public:
   : _size(arr.size())
   {
     std::copy(&arr[0], &arr[0] + _size, std::begin(_arr));
+  }
+
+  Size(const std::initializer_list<int32_t>& il)
+  : _size(il.size())
+  {
+    std::copy(il.begin(), il.end(), std::begin(_arr));
   }
 
   template<typename... Ts, class = typename std::enable_if<all_integral<Ts...>::value>::type>

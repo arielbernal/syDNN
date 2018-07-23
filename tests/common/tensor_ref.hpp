@@ -145,7 +145,7 @@ public:
     return *((_data) + idx);
   }
 protected:
-    void update_buffer_layout() {
+  void update_buffer_layout() {
     if (_internal.size() > 0) {
       _pitch = Size::Zeros(_internal.size());
       _pitch[_N - 1] = 1;
@@ -170,6 +170,8 @@ private:
 };
 
 
+
+// TODO: remove
 template<typename T>
 void setValues(int n, TensorRef<T>& t, Size& p) {
   if (n == t.shape().size()) {

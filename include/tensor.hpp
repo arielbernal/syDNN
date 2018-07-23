@@ -17,6 +17,7 @@ public:
   , _alignment(alignment)
   , _internal(align(shape + 2 * padding, alignment))
   , _type(type)
+  , _N(shape.size())
   {
     update_buffer_layout();
   }
@@ -41,42 +42,23 @@ public:
     return ret.str();
   }
 
-  Size shape() {
-    return _shape;
-  }
-
-  Size padding() {
-    return _padding;
-  }
-
-  Size alignment() {
-    return _alignment;
-  }
-
-  Size pitch() {
-    return _pitch;
-  }
-
-  Size internal() {
-    return _internal;
-  }
-
-  size_t buffer_size() const {
-    return _buffer_size;
-  }
-
-  bool allocated() const {
-    return _allocated;
-  }
-
-  bool mapped() const {
-    return _mapped_ptr != nullptr;
-  }
+  Size shape() { return _shape; }
+  Size padding() { return _padding; }
+  Size alignment() { return _alignment; }
+  Size pitch() { return _pitch; }
+  Size internal() { return _internal; }
+  size_t shape(size_t idx) { return _shape[idx]; }
+  size_t padding(size_t idx) { return _padding[idx]; }
+  size_t alignment(size_t idx) { return _alignment[idx]; }
+  size_t pitch(size_t idx) { return _pitch[idx]; }
+  size_t internal(size_t idx) { return _internal[idx]; }
+  size_t buffer_size() const { return _buffer_size; }
+  size_t dim() { return _shape.size(); }
+  bool allocated() const { return _allocated; }
+  bool mapped() const { return _mapped_ptr != nullptr; }
 
   template<typename T = void>
-  T* mapped_ptr() {
-    return static_cast<T*>(_mapped_ptr);
-  }
+  T* mapped_ptr() { return static_cast<T*>(_mapped_ptr); }
 
   void allocate(cl_mem_flags flags = CL_MEM_READ_WRITE, void* host_ptr = nullptr, cl_int* err = nullptr) {
     if (_allocated)
@@ -93,7 +75,7 @@ public:
     if (_mapped_ptr != nullptr)
       throw std::runtime_error("Tensor::map");
     cl_int error;
-    _mapped_ptr = q.enqueueMapBuffer(_buffer, blocking, flags, 0, _buffer_size, events, event, &error);
+    _mapped_ptr = static_cast<uint8_t*>(q.enqueueMapBuffer(_buffer, blocking, flags, 0, _buffer_size, events, event, &error));
     _mapped_flags = flags;
     if(err != nullptr) *err = error;
     return static_cast<T*>(_mapped_ptr);
@@ -134,30 +116,52 @@ public:
   template <typename Ret, typename T, typename... Rest>
   Ret& at(T t, Rest... rest) const {
     size_t idx = index(t, rest...);
-    return *reinterpret_cast<Ret*>(static_cast<uint8_t*>(_mapped_ptr) + idx);
+    return *reinterpret_cast<Ret*>(_mapped_ptr + idx);
   }
 
   template <typename Ret>
   Ret& at(const Size& p) const{
     size_t idx = index(p);
-    return *reinterpret_cast<Ret*>(static_cast<uint8_t*>(_mapped_ptr) + idx);
+    return *reinterpret_cast<Ret*>(_mapped_ptr + idx);
+  }
+
+  void from_buffer(void* data) {
+    if (_mapped_ptr && (_mapped_flags & CL_MAP_WRITE)) {
+      std::memcpy(_mapped_ptr, data, _buffer_size);
+    }
+  }
+
+  template<typename T>
+  std::string to_string(const std::string& format, bool internal = false, size_t n = 0, size_t idx = 0) {
+    if (n == _N) {
+      char str[100];
+      snprintf(str, 100, format.c_str(), *reinterpret_cast<T*>(_mapped_ptr+idx));
+      return std::string(str) + " " ;
+    }
+    std::string ret;
+    if (n == 0) {
+      ret = to_string() + "\n";
+    }
+    for (size_t i = 0; i < (internal? _internal[n] : _shape[n]); ++i) {
+      ret = ret + to_string<T>(format, internal, n + 1, idx + (i + (internal ? 0 : _padding[n])) * _pitch[n]);
+    }
+    return ret + "\n";
   }
 
 protected:
   void update_buffer_layout() {
     if (_internal.size() > 0) {
       _pitch = Size::Zeros(_internal.size());
-      _pitch[0] = type_size(_type);
-      _buffer_size = type_size(_type) * _internal[0];
-      for (int i = 1; i < _internal.size(); ++i) {
-        _pitch[i] = _pitch[i - 1] * _internal[i - 1];
+      _pitch[_N - 1] = type_size(_type);;
+      _buffer_size = _pitch[_N - 1] * _internal[_N - 1];
+      for (int i = _N - 2 ; i >= 0 ; --i) {
+        _pitch[i] = _pitch[i + 1] * _internal[i + 1];
         _buffer_size *= _internal[i];
       }
     } else {
       _buffer_size = 0;
     }
-  }
-
+  }  
 private:
   cl::Context _context;
   Size _shape;
@@ -165,13 +169,18 @@ private:
   Size _alignment;
   Size _internal;
   Type _type;
+  size_t _N;
 
   Size _pitch;
   size_t _buffer_size;
   bool _allocated = false;
   cl::Buffer _buffer;
   cl_map_flags _mapped_flags = CL_MAP_READ;
-  void* _mapped_ptr = nullptr;
+  uint8_t* _mapped_ptr = nullptr;
 };
+
+
+
+
 
 } // namespace syDNN
