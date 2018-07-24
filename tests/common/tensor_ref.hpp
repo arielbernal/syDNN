@@ -11,6 +11,10 @@ namespace test {
 template<typename T>
 class TensorRef {
 public:
+  TensorRef()
+  : _data(nullptr) 
+  , _N(0)
+  {}
   TensorRef(const Size& shape, const Size& padding)
   : _shape(shape)
   , _padding(padding)
@@ -32,10 +36,11 @@ public:
   Size internal() { return _internal; }
   Size pitch() { return _pitch; }
   size_t dim() { return _N; }
-  size_t shape(size_t idx) { return _shape[idx]; }
-  size_t padding(size_t idx) { return _padding[idx]; }
-  size_t pitch(size_t idx) { return _pitch[idx]; }
-  size_t internal(size_t idx) { return _internal[idx]; }
+  size_t shape(size_t idx) const { return _shape[idx]; }
+  size_t padding(size_t idx) const { return _padding[idx]; }
+  size_t pitch(size_t idx) const { return _pitch[idx]; }
+  size_t internal(size_t idx) const { return _internal[idx]; }
+  bool allocated() const { return _data != nullptr; }
 
   T* data() { return _data; }
 
@@ -227,8 +232,8 @@ using TensorRefF = TensorRef<float>;
 
 
 template<typename T>
-TensorRef<T> conv2d_ref1(TensorRef<T>& input, TensorRef<T>& weights, TensorRef<T>& bias,
-                      size_t output_padding_y = 0, size_t output_padding_x = 0,
+void conv2d_ref1(const TensorRef<T>& input, const TensorRef<T>& weights, TensorRef<T>& output,
+                 const TensorRef<T>& bias = TensorRef<T>(),
                       int stride_x = 1, int stride_y = 1, int dilation_y = 1, int dilation_x = 1)
 {
   size_t input_b = input.shape(0);
@@ -247,9 +252,6 @@ TensorRef<T> conv2d_ref1(TensorRef<T>& input, TensorRef<T>& weights, TensorRef<T
   size_t output_y = 1 + (int(input_y) + 2 * input_padding_y - ((weights_y - 1) * dilation_y + 1)) / stride_y;
   size_t output_x = 1 + (int(input_x) + 2 * input_padding_x - ((weights_x - 1) * dilation_x + 1)) / stride_x;
 
-  TensorRef<T> output({int32_t(output_b), int32_t(output_c), int32_t(output_y), int32_t(output_x)},
-                      {0, 0, int32_t(output_padding_y), int32_t(output_padding_x)});
-
   for (size_t b = 0; b < output_b; ++b) {
     for (size_t c = 0; c < output_c; ++c) {
       for (size_t y = 0; y < output_y; ++y) {
@@ -265,12 +267,11 @@ TensorRef<T> conv2d_ref1(TensorRef<T>& input, TensorRef<T>& weights, TensorRef<T
               } // fx
             } // fy
           } // fc
-          output(b, c, y, x) = acc + bias(c);
+          output(b, c, y, x) = acc + (bias.allocated() ? bias(c) : 0);
         } // x
       } // y
     } // c
   } // b
-  return output;
 }
 
 

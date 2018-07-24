@@ -10,6 +10,7 @@ namespace syDNN {
 
 class Tensor {
 public:
+  Tensor() : _N(0) {}
   Tensor(cl::Context context, const Size& shape, const Size& padding, const Size& alignment, Type type = Type::clrt_fp32)
   : _context(context)
   , _shape(shape)
@@ -53,7 +54,7 @@ public:
   size_t pitch(size_t idx) const { return _pitch[idx]; }
   size_t internal(size_t idx) const { return _internal[idx]; }
   size_t buffer_size() const { return _buffer_size; }
-  size_t dim() const { return _shape.size(); }
+  size_t dim() const { return _N; }
   bool allocated() const { return _allocated; }
   bool mapped() const { return _mapped_ptr != nullptr; }
 
@@ -181,8 +182,6 @@ private:
   uint8_t* _mapped_ptr = nullptr;
 };
 
-
-
-
+static const Tensor NullTensor;
 
 } // namespace syDNN

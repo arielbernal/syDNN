@@ -4,9 +4,15 @@
 #include <tensor_ref.hpp>
 #include <test_common.hpp>
 
+
+void foo(const cl::Device& d = cl::Device()) {
+
+}
+
 int main() {
   using namespace syDNN;
   using namespace syDNN::test;
+
 
   std::string platform_name = "Intel";
   std::vector<cl::Platform> all_platforms;
@@ -31,52 +37,48 @@ int main() {
   }
 
   TensorRefF Xr = RandomTensorRef({1, 2, 5, 5}, {0, 0, 1, 1}, 1, 10);
-  std::cout << Xr.to_string("%4.0f") << std::endl;
   TensorRefF Wr = RandomTensorRef({3, 2, 3, 3}, {0, 0, 0, 0}, 1, 10);
-  std::cout << Wr.to_string("%4.0f") << std::endl;
-  TensorRefF br = RandomTensorRef({3}, {0}, 0, 0);
-  std::cout << br.to_string("%4.0f") << std::endl;
+  TensorRefF Yr = TensorRefF({1, 3, 5, 5}, {0, 0, 1, 1});
+  TensorRefF br = RandomTensorRef({3}, {0}, 1, 10);
 
-  TensorRefF Yr = conv2d_ref1(Xr, Wr, br, 0, 0, 1, 1, 1, 1);
+  conv2d_ref1(Xr, Wr, Yr, br, 2, 2);
+  //conv2d_ref1(Xr, Wr, Yr);
   std::cout << Yr.to_string("%4.0f") << std::endl;
 
 
   Tensor X(clContext, {1, 2, 5, 5}, {0, 0, 1, 1});
   Tensor W(clContext, {3, 2, 3, 3});
   Tensor b(clContext, {3});
-  Tensor Y(clContext, {1, 3, 5, 5}, {0, 0, 1, 1});
+  Tensor Y(clContext, {1, 3, 3, 3}, {0, 0, 1, 1});
 
 
   b.allocate();
   b.map(clQueue);
   b.from_buffer((void*)br.data());
-
-  std::cout << b.to_string<float>("%4.0f") << std::endl;
+  b.unmap(clQueue);
 
 
   X.allocate();
   X.map(clQueue);
   X.from_buffer((void*)Xr.data());
-  std::cout << X.to_string<float>("%4.0f", true) << std::endl;
   X.unmap(clQueue);
 
   W.allocate();
   W.map(clQueue);
   W.from_buffer((void*)Wr.data());
-  std::cout << W.to_string<float>("%4.0f", true) << std::endl;
   W.unmap(clQueue);
-
 
   Y.allocate();
 
-  SyKernel k = conv2d(clContext, X, W, Y, b, {1, 1}, {1, 1});
+  //SyKernel k = conv2d(clContext, X, W, Y, NullTensor, {1, 1}, {1, 1});
+  //SyKernel k = conv2d(clContext, X, W, Y, b);
+  SyKernel k = conv2d(clContext, X, W, Y, b, {2, 2});
   cl_int err = clQueue.enqueueNDRangeKernel(k.kernel, k.offset, k.gws, k.lws);
   std::cout << "Kernel execution = " << OpenCLErrorString(err) << std::endl;
 
   Y.map<float>(clQueue, true, CL_MAP_READ, nullptr, nullptr, &err);
   std::cout << "Output buffer mapped = " << OpenCLErrorString(err) << std::endl;
   std::cout << Y.to_string<float>("%4.0f", true) << std::endl;
-
 
 
   //Kernel k = conv_2d(clContext, tin, W, b, stride, tout);
@@ -86,7 +88,7 @@ int main() {
   // Full control
   // Create program, compile, create kernel, set_args.
   // Convolution2DInfo info = get_info<conv2d>(Input_shape, Weights_shape, stride, padding);
-  // Kernel k = conv_2d(clContext, tin, W, b, stride, tout);
+  // Kernel k = conv2d(clContext, tin, W, b, stride, tout);
   // k.enqueue(clQueue); // or  clQueue.enqueueNDRange(k.kernel, k.offset, k.glogal, k.local, events, event)
 
 // Graph API

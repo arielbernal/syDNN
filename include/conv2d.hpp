@@ -24,7 +24,6 @@ inline std::string load_program(const std::string& filename) {
 
 inline SyKernel get_kernel(cl::Context context, const std::string& sourceCode, const std::string& kernelName,
                   const std::string& compileOptions = "") {
-  std::cout << compileOptions;
   SyKernel k;
   cl_int err = CL_SUCCESS;
   std::vector<cl::Device> devices = context.getInfo<CL_CONTEXT_DEVICES>();
@@ -37,9 +36,8 @@ inline SyKernel get_kernel(cl::Context context, const std::string& sourceCode, c
       std::cout << "Device: " << device_name << std::endl;
       std::cout << log << std::endl;
     }
+    throw std::runtime_error("get_kernel -> build error");
   }
-  std::cout << OpenCLErrorString(err) << std::endl;
-
   k.kernel = cl::Kernel(program, kernelName.c_str());
   return k;
 }
@@ -64,8 +62,12 @@ std::string getTensorOption(const std::string& name, const Tensor& t)
   return opt.str();
 }
 
-SyKernel conv2d(cl::Context context, const Tensor& input, const Tensor& weights, Tensor& output, const Tensor& bias,
-                 const Size& stride, const Size& dilation)
+
+
+
+SyKernel conv2d(cl::Context context, const Tensor& input, const Tensor& weights, const Tensor& output,
+                const Tensor& bias = NullTensor,
+                const Size& stride = {1, 1}, const Size& dilation = {1, 1})
 {
   std::string strProgram = load_program("opencl_kernels/conv2d_naive.cl");
 
@@ -75,8 +77,11 @@ SyKernel conv2d(cl::Context context, const Tensor& input, const Tensor& weights,
   size_t input_x_padding = input.padding(3);
   size_t output_b = output.shape(0);
   size_t output_f = output.shape(1);
-  size_t output_y = output.shape(2);
-  size_t output_x = output.shape(3);
+  // size_t output_y = output.shape(2);
+  // size_t output_x = output.shape(3);
+
+  size_t output_y = 1 + (int(input.shape(2)) + 2 * input_y_padding - ((weights.shape(2) - 1) * dilation[0] + 1)) / stride[0];
+  size_t output_x = 1 + (int(input.shape(3)) + 2 * input_x_padding - ((weights.shape(3) - 1) * dilation[1] + 1)) / stride[1];
 
   std::stringstream opt;
   opt << "-I opencl_kernels ";
@@ -90,12 +95,17 @@ SyKernel conv2d(cl::Context context, const Tensor& input, const Tensor& weights,
   opt << "-D DILATION_X=" << dilation[1] << " ";
   opt << "-D INPUT_Y_OFFSET=" << (input_y_padding > filter_y_radius ? input_y_padding - filter_y_radius : 0) << " ";
   opt << "-D INPUT_X_OFFSET=" << (input_x_padding > filter_x_radius ? input_x_padding - filter_x_radius : 0) << " ";
+  if (bias.allocated()) {
+    opt << "-D BIAS_TYPE=" << "float" << " ";
+    opt << "-D BIAS_TERM=true" << " ";
+  }
 
   SyKernel k = get_kernel(context, strProgram, "convolution", opt.str());
   k.kernel.setArg(0, input.buffer());
   k.kernel.setArg(1, output.buffer());
   k.kernel.setArg(2, weights.buffer());
-  //k.kernel.setArg(3, bias.buffer());
+  if (bias.allocated())
+    k.kernel.setArg(3, bias.buffer());
 
   k.gws = cl::NDRange(output_x, output_y, output_f * output_b);
 

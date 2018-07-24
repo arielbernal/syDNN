@@ -26,7 +26,7 @@ __kernel void convolution(
     __global OUTPUT_TYPE* output,
     __global const FILTER_TYPE* weights
 #if BIAS_TERM
-    , __global const BIAS_TYPE* biases
+    , __global const BIAS_TYPE* bias
 #endif
     )
 {
