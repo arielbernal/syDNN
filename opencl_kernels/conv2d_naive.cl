@@ -1,5 +1,3 @@
-// Copyright (c) 2016-2017 Intel Corporation
-//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -14,12 +12,21 @@
 
 //#include "include/include_all.cl"
 
+#define __CAT(x, y) x##y
+#define CAT(x, y) __CAT(x, y)
+
+#define GET_DATA_INDEX(prefix, b, f, y, x)  \
+    (x)*CAT(prefix, _X_PITCH) +             \
+    (y)*CAT(prefix, _Y_PITCH) +             \
+    (f)*CAT(prefix, _F_PITCH) +             \
+    (b)*CAT(prefix, _B_PITCH)
+
 __kernel void convolution(
-    __global INPUT_TYPE* input,
+    __global const INPUT_TYPE* input,
     __global OUTPUT_TYPE* output,
-    __global FILTER_TYPE* weights
+    __global const FILTER_TYPE* weights
 #if BIAS_TERM
-    , __global BIAS_TYPE* biases
+    , __global const BIAS_TYPE* biases
 #endif
     )
 {
@@ -39,8 +46,8 @@ __kernel void convolution(
             for (uint fx = 0; fx < FILTER_X ; ++fx) {
                 int iy = y * STRIDE_Y + INPUT_Y_OFFSET + fy * DILATION_Y;
                 int ix = x * STRIDE_X + INPUT_X_OFFSET + fx * DILATION_X;
-                uint input_idx = ix * INPUT_X_PITCH + iy * INPUT_Y_PITCH + fc * INPUT_F_PITCH + b * INPUT_B_PITCH;
-                uint filter_idx = fx * FILTER_X_PITCH + fy * FILTER_Y_PITCH + fc * FILTER_F_PITCH + f * FILTER_B_PITCH;
+                uint input_idx = GET_DATA_INDEX(INPUT, b, fc, iy, ix);
+                uint filter_idx = GET_DATA_INDEX(FILTER, f, fc, fy, fx);
                 acc += input[input_idx] * weights[filter_idx];
             }
         }
@@ -49,8 +56,7 @@ __kernel void convolution(
 #if BIAS_TERM
     acc += bias[f];
 #endif
-    uint out_index = b * OUTPUT_B_PITCH + f * OUTPUT_F_PITCH + (y + OUTPUT_Y_PADDING) * OUTPUT_Y_PITCH +
-                     (x + OUTPUT_X_PADDING) * OUTPUT_X_PITCH;
+    uint out_index = GET_DATA_INDEX(OUTPUT, b, f, (y + OUTPUT_Y_PADDING), (x + OUTPUT_X_PADDING));
     output[out_index] = (OUTPUT_TYPE)(acc);
     //ACTIVATION(dotProd, NL_M, NL_N);
 }
