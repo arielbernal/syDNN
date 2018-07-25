@@ -72,6 +72,7 @@ int main() {
 
   //SyKernel k = conv2d(clContext, X, W, Y, NullTensor, {1, 1}, {1, 1});
   //SyKernel k = conv2d(clContext, X, W, Y, b);
+  
   SyKernel k = conv2d(clContext, X, W, Y, b, {2, 2});
   cl_int err = clQueue.enqueueNDRangeKernel(k.kernel, k.offset, k.gws, k.lws);
   std::cout << "Kernel execution = " << OpenCLErrorString(err) << std::endl;

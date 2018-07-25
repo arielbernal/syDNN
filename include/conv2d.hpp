@@ -1,6 +1,8 @@
 #pragma once
 #include <fstream>
 #include <iostream>
+#include <unordered_map>
+
 #include <tensor.hpp>
 
 namespace syDNN {
@@ -101,6 +103,7 @@ SyKernel conv2d(cl::Context context, const Tensor& input, const Tensor& weights,
   }
 
   SyKernel k = get_kernel(context, strProgram, "convolution", opt.str());
+
   k.kernel.setArg(0, input.buffer());
   k.kernel.setArg(1, output.buffer());
   k.kernel.setArg(2, weights.buffer());
@@ -111,6 +114,76 @@ SyKernel conv2d(cl::Context context, const Tensor& input, const Tensor& weights,
 
   return k;
 }
+
+
+class ImplementationBase {
+  std::string _programFileName;
+  std::string _kernelName;
+  std::string _kernelOptions;
+};
+
+
+class Conv2DImplementationBase : public ImplementationBase {
+public:
+   layout getInputLayout();
+   layout getOutputLayout();
+   layout getWeightsLayout();
+   shape getInputShape();
+   shape getOutputShape();
+   shape getWeightsShape();
+};
+
+class Conv2DNaive : public Conv2DImplementationBase {
+public:
+  void getOptions() {
+    std::stringstream opt;
+    opt << "-I opencl_kernels ";
+    opt << getTensorOption("INPUT", input);
+    opt << getTensorOption("FILTER", weights);
+    opt << getTensorOption("OUTPUT", output);
+    opt << "-D COMPUTE_TYPE=" << "float" << " ";
+    opt << "-D STRIDE_Y=" << stride[0] << " ";
+    opt << "-D STRIDE_X=" << stride[1] << " ";
+    opt << "-D DILATION_Y=" << dilation[0] << " ";
+    opt << "-D DILATION_X=" << dilation[1] << " ";
+    opt << "-D INPUT_Y_OFFSET=" << (input_y_padding > filter_y_radius ? input_y_padding - filter_y_radius : 0) << " ";
+    opt << "-D INPUT_X_OFFSET=" << (input_x_padding > filter_x_radius ? input_x_padding - filter_x_radius : 0) << " ";
+    if (bias.allocated()) {
+      opt << "-D BIAS_TYPE=" << "float" << " ";
+      opt << "-D BIAS_TERM=true" << " ";
+    }
+  }
+};
+
+class Conv2D1x1 : public Conv2DImplementationBase {
+public:
+  void getOptions() {}
+};
+
+class Conv2D3x3 : public Conv2DImplementationBase {
+public:
+  void getOptions() {}
+};
+
+
+
+class Conv2D {
+public:
+  Conv2DImplementationBase getImplementationList() {
+
+  }
+protected:  
+  void load_program() {}
+  void getOptions() {}
+  void compile() {}
+  static register_implementation(std::string& s);
+private:
+  static std::unordered_map<std::string, Conv2DImplementationBase> implementations;  
+};
+
+
+
+
 
 
 } // namespace syDNN
