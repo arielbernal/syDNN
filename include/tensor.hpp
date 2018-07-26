@@ -11,7 +11,7 @@ namespace syDNN {
 class Tensor {
 public:
   Tensor() : _N(0) {}
-  Tensor(cl::Context context, const Size& shape, const Size& padding, const Size& alignment, Type type = Type::clrt_fp32)
+  Tensor(cl::Context context, const Size& shape, const Size& padding, const Size& alignment, Type type = Type::sy_fp32)
   : _context(context)
   , _shape(shape)
   , _padding(padding)
@@ -23,10 +23,10 @@ public:
     update_buffer_layout();
   }
 
-  Tensor(cl::Context context, const Size& shape, const Size& padding, Type type = Type::clrt_fp32)
+  Tensor(cl::Context context, const Size& shape, const Size& padding, Type type = Type::sy_fp32)
   : Tensor(context, shape, padding, Size::Fill(shape.size(), 1), type) {}
 
-  Tensor(cl::Context context, const Size& shape, Type type = Type::clrt_fp32)
+  Tensor(cl::Context context, const Size& shape, Type type = Type::sy_fp32)
   : Tensor(context, shape, Size::Zeros(shape.size()), Size::Fill(shape.size(), 1), type) {}
 
   friend std::ostream& operator<<(std::ostream& os, const Tensor& tensor) {

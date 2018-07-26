@@ -1,87 +1,49 @@
 #include <iostream>
 #include <map>
 #include <functional>
+
 #include <tensor.hpp>
+#include <sydnn.hpp>
 #include <conv2d.hpp>
 #include <tensor_ref.hpp>
 #include <test_common.hpp>
+#include <implementation.hpp>
 
 
-class ImplementationBase {
-public:
-  std::string _programFileName;
-  std::string _kernelName;
-  std::string _kernelOptions;
-
-  std::string load_program() {
-    std::ifstream ifs(_programFileName.c_str());
-    if (!ifs.is_open())
-      throw std::ios_base::failure("load_program -> File not found: " + _programFileName);
-
-    std::string ret;
-    ret.assign(std::istreambuf_iterator<char>(ifs), std::istreambuf_iterator<char>());
-    return ret;
-  }
-};
+using namespace syDNN;
 
 
-class Conv2DImplBase : public ImplementationBase {
-public:
-   virtual void get_options(int x, int y) = 0;
-   virtual Size output_shape(const Size& input_shape, const Size& weights_shape) = 0;
-};
-
-class Conv2DNaiveImpl : public Conv2DImplBase {
-public:
-  Conv2DNaiveImpl() {
-    std::cout << "Constructor Conv2DNaiveImpl\n";
-    std::cout << "Loading program\n";
-  }
-  void get_options(int x, int y) { std::cout << "Conv2DNaiveImpl->get_options\n"; }
-  void Size output_shape(const Size& input_shape, const Size& weights_shape, const Size& ) {
-      size_t output_y = 1 + (int(input_shape(2)) + 2 * input_y_padding - ((weights.shape(2) - 1) * dilation[0] + 1)) / stride[0];
-      size_t output_x = 1 + (int(input_shape(3)) + 2 * input_x_padding - ((weights.shape(3) - 1) * dilation[1] + 1)) / stride[1];
-
-  }
-private:
-  static bool _registered;
-};
-
-class Conv2D {
-public:
-  using CreateImplementation = std::function<std::unique_ptr<Conv2DImplBase>()>;
-
-  static std::unique_ptr<Conv2DImplBase> create_implementation(const std::string& name) {
-    auto it = _implementations.find(name);
-    if (it != _implementations.end())
-      return it->second();
-
-    return nullptr;
-  }
-
-  static bool register_implementation(const std::string name, CreateImplementation funcCreate) {
-    auto it = _implementations.find(name);
-    if (it == _implementations.end()) {
-      _implementations[name] = funcCreate;
-      return true;
-    }
-    return false;
-  }
-private:
-  static std::map<std::string, CreateImplementation> _implementations;
-};
-
-std::map<std::string, Conv2D::CreateImplementation> Conv2D::_implementations;
-
-bool Conv2DNaiveImpl::_registered = Conv2D::register_implementation("Conv2DNaive",
-                           []() -> std::unique_ptr<Conv2DImplBase> {return std::make_unique<Conv2DNaiveImpl>();});
-
-using Conv2DImpl = std::unique_ptr<Conv2DImplBase>;
 
 int main() {
+  std::cout << Conv2DFactory::default_implementation() << std::endl;
+  Conv2D conv2d = Conv2DFactory::create();
+  std::cout << conv2d->output_shape({2, 3, 7, 7}, {4, 3, 5, 5}, sy_same) << std::endl;
 
-  Conv2DImpl impl = Conv2D::create_implementation("Conv2DNaive");
-  impl->get_options(1, 2);
+
+  // Conv2D conv2d = Conv2DFactory::create("Conv2DNaive");
+  // Tensor Y(conv2d->output_shape({....}), sy_fp32);
+ 
+  // conv2d->bindArgs(X, W, b, Y, sy_same, {1, 1}, {1, 1});
+  // conv2d->compile();
+  // conv2d->setArgs(); // allocate if not
+  // conv2d->enqueueNDRange(clQueue);
+
+  // // or
+
+  // conv2d->prepare(X, W, b, Y, sy_same, {1, 1}, {1, 1});
+  // conv2d->enqueueNDRange(clQueue);
+
+  // // or
+
+  // conv2d->enqueueNDRange(clQueue, X, W, b, Y, sy_same, {1, 1}, {1, 1});
+
+
+
+
+
+
+
+
 
 
 
