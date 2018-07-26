@@ -15,6 +15,7 @@ include_directories( BEFORE
                      ${CMAKE_CURRENT_SOURCE_DIR}
                      ${PROJECT_SOURCE_DIR}/include
                      ${PROJECT_SOURCE_DIR}/tests/common
+                     ${CMAKE_BINARY_DIR}/googletest-src/googletest/include
                      ${OpenCL_INCLUDE_DIR} )
 
 add_executable ( ${TARGET_NAME} main.cpp )

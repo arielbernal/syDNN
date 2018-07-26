@@ -14,6 +14,7 @@ include_directories(
   ${PROJECT_SOURCE_DIR}/include
   ${CMAKE_CURRENT_SOURCE_DIR}
   ${CMAKE_CURRENT_SOURCE_DIR}/include
+  ${CMAKE_BINARY_DIR}/googletest-src/googletest/include
   ${OpenCL_INCLUDE_DIR}
 )
 
