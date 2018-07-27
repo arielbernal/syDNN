@@ -18,6 +18,9 @@ include_directories( BEFORE
                      ${CMAKE_BINARY_DIR}/googletest-src/googletest/include
                      ${OpenCL_INCLUDE_DIR} )
 
-add_executable ( ${TARGET_NAME} main.cpp )
+
+file(GLOB SOURCES "*.cpp")
+add_executable(${TARGET_NAME} ${SOURCES})
+#add_executable ( ${TARGET_NAME} implementation.cpp main.cpp )
 
 target_link_libraries( ${TARGET_NAME} ${OpenCL_LIBRARY} ${OpenCV_LIBS} -lpthread )

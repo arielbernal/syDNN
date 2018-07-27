@@ -41,7 +41,7 @@ TensorRef<T> conv2d_ref(TensorRef<T>& input, TensorRef<T>& weights, TensorRef<T>
                 int iy = int(stride_y) * y + fy * dilation_y - input_padding_y;
                 int ix = int(stride_x) * x + fx * dilation_x - input_padding_x;
                 if (ix < 0 || iy < 0) continue;
-                acc += input(b, fc, iy, ix) * weights(c, fc, fy, fx);
+                acc += input(int32_t(b), int32_t(fc), iy, ix) * weights(int32_t(c), int32_t(fc), int32_t(fy), int32_t(fx));
               } // fx
             } // fy
           } // fc

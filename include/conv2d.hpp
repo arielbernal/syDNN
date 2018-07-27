@@ -3,8 +3,8 @@
 #include <iostream>
 #include <unordered_map>
 
-#include <implementation.hpp>
-#include <tensor.hpp>
+#include <conv2d_naive.hpp>
+#include <conv2d_3x3.hpp>
 
 namespace syDNN {
 
@@ -188,56 +188,6 @@ namespace syDNN {
 
 
 
-class Conv2DImplBase : public ImplementationBase {
-public:
-  Conv2DImplBase(const std::string& programFilename)
-  : ImplementationBase(programFilename)
-  {}
-
-  virtual Layout input_layout() { return sy_nchw; }
-  virtual Layout weights_layout() { return sy_nchw; }
-  virtual Layout output_layout() { return sy_nchw; }
-
-  virtual std::vector<Type> input_type() { return {sy_fp32, sy_fp16}; }
-  virtual std::vector<Type> output_type() { return {sy_fp32, sy_fp16}; }
-  virtual std::vector<Type> weights_type() { return {sy_fp32, sy_fp16}; }
-
-  virtual Size output_shape(const Size& input_shape, const Size& weights_shape,
-     const Padding& padding = sy_valid, const Size& stride = {1, 1}, const Size& dilation = {1, 1}) = 0;
-};
-
-using Conv2DFactory = ImplementationFactory<Conv2DImplBase>;
-
-class Conv2DNaiveImpl : public Conv2DImplBase {
-public:
-  Conv2DNaiveImpl() 
-  : Conv2DImplBase("opencl_kernels/conv2d_naive.cl")
-  {
-    addKernel("convolution");
-  }
-  Size output_shape(const Size& input_shape, const Size& weights_shape,
-                    const Padding& padding = sy_valid, const Size& stride = {1, 1}, const Size& dilation = {1, 1}) final {
-    int input_padding_w = 0;
-    int input_padding_h = 0;
-    if (padding == sy_same) {
-      input_padding_h = weights_shape[2] / 2;
-      input_padding_w = weights_shape[3] / 2;
-    }
-
-    int out_h = 1 + (int(input_shape[2]) + 2 * input_padding_h - ((weights_shape[2] - 1) * dilation[0] + 1)) / stride[0];
-    int out_w = 1 + (int(input_shape[3]) + 2 * input_padding_w - ((weights_shape[3] - 1) * dilation[1] + 1)) / stride[1];
-    Size ret {input_shape[0], weights_shape[0], out_h, out_w};
-    return ret;
-  }
-private:
-  static bool _registered;
-};
-
-
-bool Conv2DNaiveImpl::_registered = Conv2DFactory::register_implementation("Conv2DNaive", true,
-                           []() -> std::unique_ptr<Conv2DImplBase> {return std::make_unique<Conv2DNaiveImpl>();});
-
-using Conv2D = std::unique_ptr<Conv2DImplBase>;
 
 
 } // namespace syDNN

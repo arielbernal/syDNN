@@ -10,7 +10,13 @@ namespace syDNN {
 
 class Tensor {
 public:
-  Tensor() : _N(0) {}
+  Tensor() : _N(0), _type(Type::sy_fp32) {}
+  Tensor(cl::Context context)
+  : _context(context)
+  , _N(0)
+  , _type(Type::sy_fp32)
+  {}
+
   Tensor(cl::Context context, const Size& shape, const Size& padding, const Size& alignment, Type type = Type::sy_fp32)
   : _context(context)
   , _shape(shape)
@@ -28,6 +34,17 @@ public:
 
   Tensor(cl::Context context, const Size& shape, Type type = Type::sy_fp32)
   : Tensor(context, shape, Size::Zeros(shape.size()), Size::Fill(shape.size(), 1), type) {}
+
+  void resize(const Size& shape, const Size& padding = Size(), const Size& alignment = Size()) {
+    if (allocated())
+      throw std::runtime_error("Tensor::resize -> resize of allocated tensor");
+    _shape = shape;
+    _padding = padding.size() == 0 ? Size::Zeros(shape.size()) : padding;
+    _alignment = alignment.size() == 0 ? Size::Fill(shape.size(), 1) : alignment;
+    _internal = align(_shape + 2 * _padding, _alignment);
+    _N = _shape.size();
+    update_buffer_layout();
+  }
 
   friend std::ostream& operator<<(std::ostream& os, const Tensor& tensor) {
     os << tensor.to_string();
@@ -48,11 +65,11 @@ public:
   Size alignment() const { return _alignment; }
   Size pitch() const { return _pitch; }
   Size internal() { return _internal; }
-  size_t shape(size_t idx) const { return _shape[idx]; }
-  size_t padding(size_t idx) const { return _padding[idx]; }
-  size_t alignment(size_t idx) const { return _alignment[idx]; }
-  size_t pitch(size_t idx) const { return _pitch[idx]; }
-  size_t internal(size_t idx) const { return _internal[idx]; }
+  int32_t shape(size_t idx) const { return _shape[idx]; }
+  int32_t padding(size_t idx) const { return _padding[idx]; }
+  int32_t alignment(size_t idx) const { return _alignment[idx]; }
+  int32_t pitch(size_t idx) const { return _pitch[idx]; }
+  int32_t internal(size_t idx) const { return _internal[idx]; }
   size_t buffer_size() const { return _buffer_size; }
   size_t dim() const { return _N; }
   bool allocated() const { return _allocated; }

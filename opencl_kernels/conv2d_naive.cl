@@ -39,7 +39,6 @@ __kernel void convolution(
     const uint f = get_global_id(2) % OUTPUT_F;
     const uint b = get_global_id(2) / OUTPUT_F;
 #endif
-
     COMPUTE_TYPE acc = (COMPUTE_TYPE)(0);
     for (uint fc = 0; fc < FILTER_F; ++fc) {
         for (uint fy = 0; fy < FILTER_Y ; ++fy) {

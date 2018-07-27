@@ -1,5 +1,7 @@
 #pragma once
 #include <type_traits>
+#include <fstream>
+#include <iostream>
 #include <CL/cl.hpp>
 
 namespace syDNN
@@ -91,6 +93,34 @@ inline const char* OpenCLErrorString(cl_int err)
       default: break;
     }
     return "CL_UNKOWN_ERROR";
+}
+
+inline std::string load_program(const std::string& filename) {
+  std::ifstream ifs(filename.c_str());
+  if (!ifs.is_open())
+    throw std::ios_base::failure("load_program -> File not found: " + filename);
+
+  std::string ret;
+  ret.assign(std::istreambuf_iterator<char>(ifs), std::istreambuf_iterator<char>());
+  return ret;
+}
+
+inline cl::Kernel compile_kernel(cl::Context context, const std::string& sourceCode, const std::string& kernelName,
+                                  const std::string& compileOptions = "") {
+  cl_int err = CL_SUCCESS;
+  std::vector<cl::Device> devices = context.getInfo<CL_CONTEXT_DEVICES>();
+  cl::Program program = cl::Program(context, sourceCode, false);
+  err = program.build(compileOptions.c_str());
+  if (err != CL_SUCCESS) {
+    for (auto& e : devices) {
+      std::string device_name = e.getInfo<CL_DEVICE_NAME>();
+      std::string log = program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(e);
+      std::cout << "Error compiling kernel : " << kernelName << " (Device : " << device_name << ")" << std::endl;
+      std::cout << log << std::endl;
+    }
+    throw std::runtime_error("compile_kernel -> build error");
+  }
+  return cl::Kernel(program, kernelName.c_str());
 }
 
 
