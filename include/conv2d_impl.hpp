@@ -32,11 +32,6 @@ public:
     return ret;
   }
 
-  virtual void bind(cl::Context context, const Tensor& input, const Tensor& output, const Tensor& weights,
-                     const Padding& padding = sy_valid, const Size& stride = {1, 1}, const Size& dilation = {1, 1}) {
-    bind(context, input, output, weights, Tensor(), padding, stride, dilation);
-  }
-
   virtual void bind(cl::Context context, const Tensor& input, const Tensor& output, const Tensor& weights, const Tensor& bias = Tensor(),
                      const Padding& padding = sy_valid, const Size& stride = {1, 1}, const Size& dilation = {1, 1}) {
     _context = context;
@@ -48,6 +43,11 @@ public:
     _stride = stride;
     _dilation = dilation;
     // validate here shapes/layouts/types here
+  }
+
+  virtual void bind(cl::Context context, const Tensor& input, const Tensor& output, const Tensor& weights,
+                     const Padding& padding = sy_valid, const Size& stride = {1, 1}, const Size& dilation = {1, 1}) {
+    bind(context, input, output, weights, Tensor(), padding, stride, dilation);
   }
 
   virtual void compile() {
@@ -63,7 +63,7 @@ public:
     opt << "-D DILATION_X=" << _dilation[1] << " ";
     opt << "-D INPUT_Y_OFFSET=" << 0 << " ";
     opt << "-D INPUT_X_OFFSET=" << 0 << " ";
-    if (_bias->dim() > 0) {
+    if (_bias) {
       opt << "-D BIAS_TYPE=" << "float" << " ";
       opt << "-D BIAS_TERM=true" << " ";
     }
@@ -76,7 +76,7 @@ public:
     k.setArg(0, _input->buffer());
     k.setArg(1, _output->buffer());
     k.setArg(2, _weights->buffer());
-    if (_bias->dim() > 0)
+    if (_bias)
       k.setArg(3, _bias->buffer());
     cl::NDRange gws = cl::NDRange(_output->shape(3), _output->shape(2), _output->shape(1) * _output->shape(0));
     cl::NDRange lws = cl::NullRange;
@@ -96,7 +96,7 @@ protected:
   Size _output_offset;
 };
 
-using Conv2DFactory = ImplementationFactory<Conv2DImplBase>;
+class Conv2DFactory : public ImplementationFactory<Conv2DImplBase> {};
 using Conv2D = std::unique_ptr<Conv2DImplBase>;
 
 }

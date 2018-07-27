@@ -44,38 +44,39 @@ int main() {
   // //conv2d_ref1(Xr, Wr, Yr);
   // std::cout << Yr.to_string("%4.0f") << std::endl;
 
-  Tensor X(clContext, {1, 2, 7, 7}, {0, 0, 1, 1});
-  Tensor W(clContext, {3, 2, 3, 3});
-  Tensor b(clContext, {3});
-  Tensor Y(clContext);
+  Tensor X({1, 2, 7, 7}, {0, 0, 1, 1});
+  Tensor W({3, 2, 3, 3});
+  Tensor b({3}, {0});
+  Tensor Y;
 
-  std::cout << Conv2DFactory::default_implementation() << std::endl;
   Conv2D conv2d = Conv2DFactory::create("Conv2DNaive");
   conv2d->bind(clContext, X, Y, W, b, sy_same);
-
-  Y.resize(conv2d->output_shape());
+ 
+  Y.resize(conv2d->output_shape(), {0, 0, 1, 1});
 
   conv2d->compile();
 
-  X.allocate();
+  X.allocate(clContext);
   X.map(clQueue);
   X.from_buffer((void*)Xr.data());
   X.unmap(clQueue);
 
-  W.allocate();
+  W.allocate(clContext);
   W.map(clQueue);
   W.from_buffer((void*)Wr.data());
   W.unmap(clQueue);
 
-  b.allocate();
+  b.allocate(clContext);
   b.map(clQueue);
   b.from_buffer((void*)br.data());
   b.unmap(clQueue);
 
-  Y.allocate();
+  Y.allocate(clContext);
+
 
   cl_int err = conv2d->enqueue(clQueue);
   clQueue.finish();
+
 
   Y.map<float>(clQueue, true, CL_MAP_READ, nullptr, nullptr, &err);
   std::cout << Y.to_string<float>("%4.0f", true) << std::endl;

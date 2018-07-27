@@ -10,16 +10,12 @@ namespace syDNN {
 
 class Tensor {
 public:
-  Tensor() : _N(0), _type(Type::sy_fp32) {}
-  Tensor(cl::Context context)
-  : _context(context)
-  , _N(0)
-  , _type(Type::sy_fp32)
-  {}
+  Tensor() : _type(Type::sy_fp32), _N(0), _allocated(false) {
+    std::cout << "default\n";
+  }
 
-  Tensor(cl::Context context, const Size& shape, const Size& padding, const Size& alignment, Type type = Type::sy_fp32)
-  : _context(context)
-  , _shape(shape)
+  Tensor(const Size& shape, const Size& padding, const Size& alignment, Type type = Type::sy_fp32)
+  : _shape(shape)
   , _padding(padding)
   , _alignment(alignment)
   , _internal(align(shape + 2 * padding, alignment))
@@ -29,11 +25,11 @@ public:
     update_buffer_layout();
   }
 
-  Tensor(cl::Context context, const Size& shape, const Size& padding, Type type = Type::sy_fp32)
-  : Tensor(context, shape, padding, Size::Fill(shape.size(), 1), type) {}
+  Tensor(const Size& shape, const Size& padding, Type type = Type::sy_fp32)
+  : Tensor(shape, padding, Size::Fill(shape.size(), 1), type) {}
 
-  Tensor(cl::Context context, const Size& shape, Type type = Type::sy_fp32)
-  : Tensor(context, shape, Size::Zeros(shape.size()), Size::Fill(shape.size(), 1), type) {}
+  Tensor(const Size& shape, Type type = Type::sy_fp32)
+  : Tensor(shape, Size::Zeros(shape.size()), Size::Fill(shape.size(), 1), type) {}
 
   void resize(const Size& shape, const Size& padding = Size(), const Size& alignment = Size()) {
     if (allocated())
@@ -80,11 +76,12 @@ public:
   template<typename T = void>
   T* mapped_ptr() { return static_cast<T*>(_mapped_ptr); }
 
-  void allocate(cl_mem_flags flags = CL_MEM_READ_WRITE, void* host_ptr = nullptr, cl_int* err = nullptr) {
+  void allocate(cl::Context context, cl_mem_flags flags = CL_MEM_READ_WRITE, void* host_ptr = nullptr, cl_int* err = nullptr) {
     if (_allocated)
       throw std::runtime_error("Tensor::allocate");
     cl_int error;
-    _buffer = cl::Buffer(_context, flags, _buffer_size, host_ptr, &error);
+    _buffer = cl::Buffer(context, flags, _buffer_size, host_ptr, &error);
+    _context = context;
     _allocated = (error == CL_SUCCESS);
     if (err != nullptr) *err = error;
   }
@@ -198,7 +195,5 @@ private:
   cl_map_flags _mapped_flags = CL_MAP_READ;
   uint8_t* _mapped_ptr = nullptr;
 };
-
-static const Tensor NullTensor;
 
 } // namespace syDNN
