@@ -39,6 +39,5 @@ inline uint4 FUNC(reshape_dims)(uint o, uint i, uint y, uint x, uint src_size_y,
     {
         return FUNC_CALL(reshape_2_to_4)(o,i,y,x,dst_size_y,dst_size_x);
     }
-    
     return (uint4)(o,i,y,x);
 }

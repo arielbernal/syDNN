@@ -114,6 +114,8 @@ inline cl::Kernel compile_kernel(cl::Context context, const std::string& sourceC
   if (err != CL_SUCCESS) {
     for (auto& e : devices) {
       std::string device_name = e.getInfo<CL_DEVICE_NAME>();
+      std::string opt = program.getBuildInfo<CL_PROGRAM_BUILD_OPTIONS>(e);
+      std::cout << opt << std::endl;
       std::string log = program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(e);
       std::cout << "Error compiling kernel : " << kernelName << " (Device : " << device_name << ")" << std::endl;
       std::cout << log << std::endl;
@@ -142,6 +144,36 @@ static inline cl_int errorHandler(cl_int err, const char* errorStr = nullptr)
 
 } // namespace detail
 
+template<typename... Args>
+inline std::string kernel_define(const std::string& def, Args&&... args) {
+  std::stringstream ss;
+  ss << "#define " << def << " ";
+  using expander = int[];
+  (void) expander{ (ss << std::forward<Args>(args), void(), 0)... };
 
+  ss << "\n";
+  return ss.str();
+}
+
+inline std::string kernel_loop_unroll_macro() {
+  std::string s = kernel_define("LOOP0(VAR, STMT)") +
+                  kernel_define("LOOP1(VAR, STMT) (STMT); (VAR)++;") +
+                  kernel_define("LOOP2(VAR, STMT) LOOP1(VAR, STMT); (STMT); (VAR)++;") +
+                  kernel_define("LOOP3(VAR, STMT) LOOP2(VAR, STMT); (STMT); (VAR)++;") +
+                  kernel_define("LOOP4(VAR, STMT) LOOP3(VAR, STMT); (STMT); (VAR)++;") +
+                  kernel_define("LOOP5(VAR, STMT) LOOP4(VAR, STMT); (STMT); (VAR)++;") +
+                  kernel_define("LOOP6(VAR, STMT) LOOP5(VAR, STMT); (STMT); (VAR)++;") +
+                  kernel_define("LOOP7(VAR, STMT) LOOP6(VAR, STMT); (STMT); (VAR)++;") +
+                  kernel_define("LOOP8(VAR, STMT) LOOP7(VAR, STMT); (STMT); (VAR)++;") +
+                  kernel_define("LOOP9(VAR, STMT) LOOP8(VAR, STMT); (STMT); (VAR)++;") +
+                  kernel_define("LOOP10(VAR, STMT) LOOP9(VAR, STMT); (STMT); (VAR)++;") +
+                  kernel_define("LOOP11(VAR, STMT) LOOP10(VAR, STMT); (STMT); (VAR)++;") +
+                  kernel_define("LOOP12(VAR, STMT) LOOP11(VAR, STMT); (STMT); (VAR)++;") +
+                  kernel_define("LOOP13(VAR, STMT) LOOP12(VAR, STMT); (STMT); (VAR)++;") +
+                  kernel_define("LOOP14(VAR, STMT) LOOP13(VAR, STMT); (STMT); (VAR)++;") +
+                  kernel_define("LOOP15(VAR, STMT) LOOP14(VAR, STMT); (STMT); (VAR)++;") +
+                  kernel_define("LOOP(N, VAR, STMT) CAT(LOOP, N)((VAR), (STMT))");
+  return s;
+}
 
 } // namespace syDNN

@@ -44,47 +44,88 @@ int main() {
   // //conv2d_ref1(Xr, Wr, Yr);
   // std::cout << Yr.to_string("%4.0f") << std::endl;
 
+  auto convoltion_impls = Conv2DFactory::implementations();
+  std::cout << "Implementations = " << convoltion_impls.size() << "\n";
+  for (auto &e : convoltion_impls) {
+    std::cout << "  " << e.first << std::endl;
+  }
+
   Tensor X({1, 2, 7, 7}, {0, 0, 1, 1});
   Tensor W({3, 2, 3, 3});
   Tensor b({3}, {0});
   Tensor Y;
 
-  Conv2D conv2d = Conv2DFactory::create("Conv2DNaive");
-  conv2d->bind(clContext, X, Y, W, b, sy_same);
- 
-  Y.resize(conv2d->output_shape(), {0, 0, 1, 1});
+  Conv2D conv2d = Conv2DFactory::create(clContext, "Conv2DNaive");
+  conv2d->bind(X, Y, W, b, sy_same);
+
+  Y.resize(conv2d->output_shape(), {0, 0, 0, 0});
 
   conv2d->compile();
 
   X.allocate(clContext);
   X.map(clQueue);
-  X.from_buffer((void*)Xr.data());
+  X.copy((void*)Xr.data());
   X.unmap(clQueue);
 
   W.allocate(clContext);
   W.map(clQueue);
-  W.from_buffer((void*)Wr.data());
+  W.copy((void*)Wr.data());
   W.unmap(clQueue);
 
   b.allocate(clContext);
   b.map(clQueue);
-  b.from_buffer((void*)br.data());
+  b.copy((void*)br.data());
   b.unmap(clQueue);
 
   Y.allocate(clContext);
 
+  conv2d->set_arguments();
 
   cl_int err = conv2d->enqueue(clQueue);
   clQueue.finish();
 
-
   Y.map<float>(clQueue, true, CL_MAP_READ, nullptr, nullptr, &err);
   std::cout << Y.to_string<float>("%4.0f", true) << std::endl;
 
-// Graph API
-  // conv2d(graph, tin, kernel_size, stride, padding, tout);
-  // relu(graph, tin);
-//----------------------------------------
+  // Tensor Y1;
+
+  // Conv2D conv2dopt = Conv2DFactory::create(clContext, "Conv2D_bfyx_os_iyx_osv16");
+  // conv2dopt->bind(X, Y1, W, b, sy_same);
+
+  // Y1.resize(conv2dopt->output_shape(), {0, 0, 0, 0});
+
+  // conv2dopt->compile();
+
+  // Y1.allocate(clContext);
+
+  // err = conv2dopt->enqueue(clQueue);
+  // clQueue.finish();
+
+  // Y1.map<float>(clQueue, true, CL_MAP_READ, nullptr, nullptr, &err);
+  // std::cout << Y1.to_string<float>("%4.0f", true) << std::endl;
+
+
+// Graph API-------------------------------------------------------------------------------------------------------
+// General Convnet
+// conv2d(graph, input, filters, kernel_size, t0, [stride, padding, dilation, data_format, activation, use_bias]);
+// relu(graph, t1, t2);
+// conv2d(graph, t2, filters, kernel_size, t3, [stride, padding, dilation, data_format, activation, use_bias]);
+// relu(graph, t3, t4);
+// maxpooling2d(graph, pool_size, t4, t5, stride, padding, data_format)
+// dropout(graph, t5, t6);
+// flatten(graph, t6, t7);
+// dense(graph, 32, t7, t8);
+
+// Inception Layer
+// conv2d(graph, input, filters = 64, kernel_size = {1, 1}, t0, [stride, padding = same, dilation, {data_format, activation = relu, use_bias}]);
+// conv2d(graph, t0, filters, kernel_size, t1, [stride, padding, dilation, {data_format, activation = relu, use_bias}]);
+// conv2d(graph, input, filters, kernel_size, t2, [stride, padding, dilation, {data_format, activation = relu, use_bias}]);
+// conv2d(graph, t2, filters, kernel_size, t3, [stride, padding, dilation, {data_format, activation = relu, use_bias}]);
+// maxpooling(graph, pool_size, input, t4, [stride, padding]);
+// conv2d(graph, t4, filters, kernel_size, t5, [stride, padding, dilation, {data_format, activation = relu, use_bias}]);
+// concatenate(graph, std::vector<Tensor> T6 = {t1, t3, t5}, [axis = 1]);
+
+//---------------------------------------------------------------------------------------------------------------------
 
 
   return 0;

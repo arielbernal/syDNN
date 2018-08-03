@@ -10,9 +10,7 @@ namespace syDNN {
 
 class Tensor {
 public:
-  Tensor() : _type(Type::sy_fp32), _N(0), _allocated(false) {
-    std::cout << "default\n";
-  }
+  Tensor() : _type(Type::sy_fp32), _N(0), _allocated(false) {}
 
   Tensor(const Size& shape, const Size& padding, const Size& alignment, Type type = Type::sy_fp32)
   : _shape(shape)
@@ -142,7 +140,7 @@ public:
     return reinterpret_cast<Ret*>(_mapped_ptr)[idx];
   }
 
-  void from_buffer(void* data) {
+  void copy(void* data) {
     if (_mapped_ptr && (_mapped_flags & CL_MAP_WRITE)) {
       std::memcpy(_mapped_ptr, data, _buffer_size);
     }
