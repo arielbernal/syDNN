@@ -70,21 +70,12 @@ public:
       preamble << kernel_define("BIAS_TYPE", "float");
       preamble << kernel_define("BIAS_TERM", "true");
     }
-    auto k = kernel();
+    Kernel& k = kernel();
     k.compile(preamble.str(), "-I opencl_kernels");
-    std::cout << "Kernel address = " << &k << std::endl;
-    auto k1 = kernel();
-    std::cout << "Kernel address = " << &k1 << std::endl;
   }
 
   virtual void set_arguments() {
-    std::cout << "conv2d_impl::set_arguments\n";
-    auto k = kernel();
-    std::cout << "Kernel address = " << &k << std::endl;
-    std::cout << "Input = " <<  *_input << " " << _input->buffer()()<< std::endl;
-    std::cout << "Output = " << *_output << " " << _output->buffer()() << std::endl;
-    std::cout << "Weights = " << *_weights << " " << _weights->buffer()() << std::endl;
-    std::cout << "Bias = " << *_bias << std::endl;
+    Kernel& k = kernel();
     k.global_work_size(cl::NDRange(_output->shape(3), _output->shape(2), _output->shape(1) * _output->shape(0)));
     k.add_argument(_input->buffer());
     k.add_argument(_output->buffer());
@@ -93,7 +84,7 @@ public:
       k.add_argument(_bias->buffer());
   }
   virtual cl_int enqueue(cl::CommandQueue queue, const std::vector<cl::Event>* events = nullptr, cl::Event* event = nullptr) {
-    auto k = kernel();
+    Kernel& k = kernel();
     return k.enqueue(queue, events, event);
   }
 protected:

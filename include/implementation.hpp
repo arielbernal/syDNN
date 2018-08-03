@@ -14,9 +14,6 @@ const size_t SY_MAX_KERNELS = 5;
 
 class Kernel {
 public:
-  Kernel() {
-    std::cout << "Kernel constructor\n";
-  }
   Kernel(const cl::Context& context, const std::string& sourceFilename, const std::string& name)
   : _context(context)
   , _name(name)
@@ -28,16 +25,13 @@ public:
 
   cl::Kernel ocl_kernel() { return _kernel; }
   cl_int enqueue(cl::CommandQueue& queue, const std::vector<cl::Event>* events = nullptr, cl::Event* event = nullptr) {
-    std::cout << _name << " " <<  _kernel() << " " << _global_work_offset << " " << _global_work_size << std::endl;
     return queue.enqueueNDRangeKernel(_kernel, _global_work_offset, _global_work_size, _local_work_size, events, event);
   }
   void compile(const std::string& preamble = "", const std::string& options = "") {
-    std::cout << "Kernel::compile\n";
     _kernel = syDNN::compile_kernel(_context, preamble + _source, _name, options);
-    std::cout << "kernel resutl = " << _name << " " << _kernel() << std::endl;
   }
 
-  template<typename T> void add_argument(const T arg) {  std::cout << "Kernel::add_argument " << idx << " " << _kernel() <<  std::endl; _kernel.setArg(idx++, arg);}
+  template<typename T> void add_argument(const T arg) { _kernel.setArg(idx++, arg); }
   void global_work_size(const cl::NDRange& range) { _global_work_size = range; }
   void global_work_offset(const cl::NDRange& range) { _global_work_offset = range; }
   void local_work_size(const cl::NDRange& range) { _local_work_size = range; }
@@ -56,8 +50,10 @@ private:
 class ImplementationBase {
 public:
   ImplementationBase(const cl::Context context) : _context(context) {}
-  Kernel kernel(size_t kernel_id = 0) { return _kernels[kernel_id]; }
-  void add_kernel(const std::string& name, const std::string& sourceFilename) { _kernels.emplace_back(Kernel({_context, name, sourceFilename})); }
+  Kernel& kernel(size_t kernel_id = 0) { 
+    return _kernels[kernel_id];
+  }
+  void add_kernel(const std::string& name, const std::string& sourceFilename) { _kernels.emplace_back(_context, name, sourceFilename); }
   virtual void compile() = 0;
   virtual void set_arguments() = 0;
 private:
