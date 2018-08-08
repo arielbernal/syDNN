@@ -43,10 +43,10 @@ int main() {
   // conv2d_ref1(Xr, Wr, Yr, br, 2, 2);
   // //conv2d_ref1(Xr, Wr, Yr);
   // std::cout << Yr.to_string("%4.0f") << std::endl;
-
-  auto convoltion_impls = Conv2DFactory::implementations();
-  std::cout << "Implementations = " << convoltion_impls.size() << "\n";
-  for (auto &e : convoltion_impls) {
+  std::cout << "Default Conv2D Implementation : " << Conv2DFactory::default_implementation() << std::endl;
+  auto conv_impls = Conv2DFactory::implementations();
+  std::cout << "Implementations = " << conv_impls.size() << "\n";
+  for (auto &e : conv_impls) {
     std::cout << "  " << e.first << std::endl;
   }
 
@@ -55,31 +55,31 @@ int main() {
   Tensor b({3}, {0});
   Tensor Y;
 
-  Conv2D conv2d = Conv2DFactory::create(clContext, "Conv2DNaive");
-  conv2d->bind(X, Y, W, b, sy_same);
+  Conv2DPtr conv2d = Conv2D("Conv2DNaive", clContext, X, Y, W, b, sy_same);
+  // alternative default implementation: Conv2DPtr conv2d = Conv2D(clContext, X, Y, W, b, sy_same);
 
-  Y.resize(conv2d->output_shape(), {0, 0, 0, 0});
+  // At this point we could query weights layout to perfrom weights reordering
+  // ReorderWeights(clContext, Wo, W, conv2d->weights_layout())
+
+  Y.resize(conv2d->output_shape());
 
   conv2d->compile();
 
   X.allocate(clContext);
-  X.map(clQueue);
-  X.copy((void*)Xr.data());
-  X.unmap(clQueue);
-
   W.allocate(clContext);
-  W.map(clQueue);
-  W.copy((void*)Wr.data());
-  W.unmap(clQueue);
-
   b.allocate(clContext);
-  b.map(clQueue);
-  b.copy((void*)br.data());
-  b.unmap(clQueue);
-
   Y.allocate(clContext);
-
   conv2d->set_arguments();
+
+  X.map(clQueue, false);
+  W.map(clQueue, false);
+  b.map(clQueue);
+  X.copy((void*)Xr.data());
+  W.copy((void*)Wr.data());
+  b.copy((void*)br.data());
+  X.unmap(clQueue);
+  W.unmap(clQueue);
+  b.unmap(clQueue);
 
   cl_int err = conv2d->enqueue(clQueue);
   clQueue.finish();
@@ -87,7 +87,7 @@ int main() {
   Y.map<float>(clQueue, true, CL_MAP_READ, nullptr, nullptr, &err);
   std::cout << Y.to_string<float>("%4.0f", true) << std::endl;
 
-  // Tensor Y1;
+  Tensor Y1;
 
   // Conv2D conv2dopt = Conv2DFactory::create(clContext, "Conv2D_bfyx_os_iyx_osv16");
   // conv2dopt->bind(X, Y1, W, b, sy_same);
@@ -97,6 +97,8 @@ int main() {
   // conv2dopt->compile();
 
   // Y1.allocate(clContext);
+
+  // conv2dopt->set_arguments();
 
   // err = conv2dopt->enqueue(clQueue);
   // clQueue.finish();

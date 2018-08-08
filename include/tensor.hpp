@@ -96,13 +96,10 @@ public:
     return reinterpret_cast<T*>(_mapped_ptr);
   }
 
-  cl_int unmap(cl::CommandQueue q, bool blocking = true, const std::vector<cl::Event>* events = nullptr, cl::Event* event = nullptr) {
+  cl_int unmap(cl::CommandQueue q, const std::vector<cl::Event>* events = nullptr, cl::Event* event = nullptr) {
     cl_int err = CL_SUCCESS;
     if (_mapped_ptr != nullptr) {
       err = q.enqueueUnmapMemObject(_buffer, _mapped_ptr, events, event);
-      if (blocking) {
-        q.finish();
-      }
       _mapped_ptr = nullptr;
     }
     return err;
@@ -193,5 +190,25 @@ private:
   cl_map_flags _mapped_flags = CL_MAP_READ;
   uint8_t* _mapped_ptr = nullptr;
 };
+
+
+std::string getTensor4DOption(const std::string& name, const Tensor& t)
+{
+  std::stringstream ss;
+  ss << kernel_define(name + "_TYPE", "float");
+  ss << kernel_define(name + "_B", t.shape(0));
+  ss << kernel_define(name + "_F", t.shape(1));
+  ss << kernel_define(name + "_Y", t.shape(2));
+  ss << kernel_define(name + "_X", t.shape(3));
+  ss << kernel_define(name + "_B_PITCH", t.pitch(0));
+  ss << kernel_define(name + "_F_PITCH", t.pitch(1));
+  ss << kernel_define(name + "_Y_PITCH", t.pitch(2));
+  ss << kernel_define(name + "_X_PITCH", t.pitch(3));
+  ss << kernel_define(name + "_B_PADDING", t.padding(0));
+  ss << kernel_define(name + "_F_PADDING", t.padding(1));
+  ss << kernel_define(name + "_Y_PADDING", t.padding(2));
+  ss << kernel_define(name + "_X_PADDING", t.padding(3));
+  return ss.str();
+}
 
 } // namespace syDNN
