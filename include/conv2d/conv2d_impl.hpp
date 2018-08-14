@@ -27,12 +27,23 @@ public:
   virtual std::vector<Type> output_type() = 0;
   virtual std::vector<Type> weights_type() = 0;
 
-  virtual Size output_shape() = 0;
   virtual void compile() = 0;
   virtual void set_arguments() = 0;
 
-  virtual Size output_shape(const Tensor& input, const Tensor& weights,
-            const Padding& padding, const Size& stride = {1, 1}, const Size& dilation = {1, 1}) = 0;
+  static Size output_shape(const Tensor& input, const Tensor& weights,
+            const Padding& padding, const Size& stride = {1, 1}, const Size& dilation = {1, 1}) {
+    int input_padding_w = 0;
+    int input_padding_h = 0;
+    if (padding == sy_same) {
+      input_padding_h = weights.shape(2) / 2;
+      input_padding_w = weights.shape(3) / 2;
+    }
+
+    int32_t out_h = 1 + (int(input.shape(2)) + 2 * input_padding_h - ((weights.shape(2) - 1) * dilation[0] + 1)) / stride[0];
+    int32_t out_w = 1 + (int(input.shape(3)) + 2 * input_padding_w - ((weights.shape(3) - 1) * dilation[1] + 1)) / stride[1];
+    Size ret {input.shape(0), weights.shape(0), out_h, out_w};
+    return ret;
+  }
 
 
 protected:
@@ -55,8 +66,6 @@ using Conv2DConstructor = std::function<Conv2DPtr(const cl::Context& context, co
 
 class Conv2DFactory : public FactoryBase<Conv2DBase, Conv2DConstructor> {
 public:
-  using ObjectMap1 = std::unordered_map<std::string, Conv2DPtr>;
-
   template<class T>
   static bool register_implementation(const std::string& name) {
     return register_impl<T>(name, true, [](const cl::Context& context, const Tensor& input, const Tensor& output,
@@ -64,9 +73,13 @@ public:
                       const Padding& padding, const Size& stride, const Size& dilation) -> Conv2DPtr
       { return std::make_unique<T>(context, input, output, weights, bias, padding, stride, dilation); } );
   }
-  static Size output_shape(const std::string& name, const Tensor& input, const Tensor& weights,
+  // static Size instance_specific_required_param(const std::string& name, const Tensor& input, const Tensor& weights,
+  //           const Padding& padding, const Size& stride = {1, 1}, const Size& dilation = {1, 1}) {
+  //   return FactoryBase::get_instance(name)->output_shape(input, weights, padding, stride, dilation);
+  // }
+  static Size output_shape(const Tensor& input, const Tensor& weights,
             const Padding& padding, const Size& stride = {1, 1}, const Size& dilation = {1, 1}) {
-    return FactoryBase::get_instance(name)->output_shape(input, weights, padding, stride, dilation);
+    return Conv2DBase::output_shape(input, weights, padding, stride, dilation);
   }
 private:
   Conv2DFactory(Conv2DFactory const&) = delete;

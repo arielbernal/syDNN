@@ -50,20 +50,16 @@ int main() {
     std::cout << "  " << e.first << std::endl;
   }
 
-
   Tensor X({1, 2, 7, 7}, {0, 0, 1, 1});
   Tensor W({3, 2, 3, 3});
   Tensor b({3}, {0});
-  Tensor Y(Conv2DFactory::output_shape("Conv2DNaive", X, W, sy_same));
+  Tensor Y(Conv2DFactory::output_shape(X, W, sy_same));
 
+  // std::string bestImpl = Conv2DFactory::best_implementation(X, W, sy_same);
+  // std::vector<ProfilingInfo> profilingInfo = Conv2DFactory::profiling_list(X, W, sy_same);
+
+  std::cout << "Executing " << "Conv2DNaive" << std::endl;
   Conv2DPtr conv2d = Conv2D("Conv2DNaive", clContext, X, Y, W, b, sy_same);
-  // alternative default implementation: Conv2DPtr conv2d = Conv2D(clContext, X, Y, W, b, sy_same);
-
-  // At this point we could query weights layout to perfrom weights reordering
-  // ReorderWeights(clContext, Wo, W, conv2d->weights_layout())
-
-//  Y.resize(conv2d->output_shape());
-
   conv2d->compile();
 
   X.allocate(clContext);
@@ -88,28 +84,23 @@ int main() {
   Y.map<float>(clQueue, true, CL_MAP_READ, nullptr, nullptr, &err);
   std::cout << Y.to_string<float>("%4.0f", true) << std::endl;
 
-  Tensor Y1;
+  std::cout << "Executing " << "Conv2D_bfyx_os_iyx_osv16" << std::endl;
+  Tensor Y1(Conv2DFactory::output_shape(X, W, sy_same));
+  Conv2DPtr conv2d1 = Conv2D("Conv2D_bfyx_os_iyx_osv16", clContext, X, Y1, W, b, sy_same);
+  conv2d1->compile();
 
-  // Conv2D conv2dopt = Conv2DFactory::create(clContext, "Conv2D_bfyx_os_iyx_osv16");
-  // conv2dopt->bind(X, Y1, W, b, sy_same);
+  Y1.allocate(clContext);
+  conv2d1->set_arguments();
 
-  // Y1.resize(conv2dopt->output_shape(), {0, 0, 0, 0});
+  err = conv2d1->enqueue(clQueue);
+  clQueue.finish();
 
-  // conv2dopt->compile();
-
-  // Y1.allocate(clContext);
-
-  // conv2dopt->set_arguments();
-
-  // err = conv2dopt->enqueue(clQueue);
-  // clQueue.finish();
-
-  // Y1.map<float>(clQueue, true, CL_MAP_READ, nullptr, nullptr, &err);
-  // std::cout << Y1.to_string<float>("%4.0f", true) << std::endl;
+  Y1.map<float>(clQueue, true, CL_MAP_READ, nullptr, nullptr, &err);
+  std::cout << Y1.to_string<float>("%4.0f", true) << std::endl;
 
 
 // Graph API-------------------------------------------------------------------------------------------------------
-// General Convnet
+// General ConvNet
 // conv2d(graph, input, filters, kernel_size, t0, [stride, padding, dilation, data_format, activation, use_bias]);
 // relu(graph, t1, t2);
 // conv2d(graph, t2, filters, kernel_size, t3, [stride, padding, dilation, data_format, activation, use_bias]);
