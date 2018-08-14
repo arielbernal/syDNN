@@ -50,6 +50,7 @@ private:
 
 class Implementation {
 public:
+  Implementation() = default;
   Implementation(const cl::Context context) : _context(context) {}
   Kernel& kernel(size_t kernel_id = 0) { return _kernels[kernel_id]; }
   void add_kernel(const std::string& name, const std::string& sourceFilename) { _kernels.emplace_back(_context, name, sourceFilename); }
@@ -106,6 +107,7 @@ private:
     static RegistryMap impl;
     return impl;
   }
+
 };
 
 

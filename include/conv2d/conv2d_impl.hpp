@@ -6,6 +6,7 @@ namespace syDNN {
 
 class Conv2DBase : public Implementation {
 public:
+  Conv2DBase() = default;
   Conv2DBase(const cl::Context& context, const Tensor& input, const Tensor& output,
             const Tensor& weights, const Tensor& bias, const Padding& padding, const Size& stride, const Size& dilation)
   : Implementation(context)
@@ -50,16 +51,32 @@ using Conv2DConstructor = std::function<Conv2DPtr(const cl::Context& context, co
 
 class Conv2DFactory : public FactoryBase<Conv2DBase, Conv2DConstructor> {
 public:
+  using ObjectMap = std::unordered_map<std::string, Conv2DPtr>;
+
   template<class T>
   static bool register_implementation(const std::string& name) {
+    auto it = objects().find(name);
+    if (it == objects().end()) {
+      objects()[name] = std::make_unique<T>();
+    }
+    else {
+      return false;
+    }
     return register_impl(name, true, [](const cl::Context& context, const Tensor& input, const Tensor& output,
                       const Tensor& weights, const Tensor& bias,
                       const Padding& padding, const Size& stride, const Size& dilation) -> Conv2DPtr
       { return std::make_unique<T>(context, input, output, weights, bias, padding, stride, dilation); } );
   }
+  Size output_shape(const std::string& name) {
+
+  }
 private:
   Conv2DFactory(Conv2DFactory const&) = delete;
   void operator=(Conv2DFactory const&) = delete;
+  static ObjectMap& objects() {
+    static ObjectMap impl;
+    return impl;
+  }
 };
 
 

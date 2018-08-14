@@ -6,6 +6,7 @@ namespace syDNN {
 
 class Conv2DNaive : public Conv2DBase {
 public:
+  Conv2DNaive() = default;
   Conv2DNaive(const cl::Context& context, const Tensor& input, const Tensor& output,
             const Tensor& weights, const Tensor& bias, const Padding& padding, const Size& stride, const Size& dilation)
   : Conv2DBase(context, input, output, weights, bias, padding, stride, dilation)
