@@ -31,6 +31,10 @@ public:
   virtual void compile() = 0;
   virtual void set_arguments() = 0;
 
+  virtual Size output_shape(const Tensor& input, const Tensor& weights,
+            const Padding& padding, const Size& stride = {1, 1}, const Size& dilation = {1, 1}) = 0;
+
+
 protected:
   const Tensor* _input;
   const Tensor* _output;
@@ -51,32 +55,22 @@ using Conv2DConstructor = std::function<Conv2DPtr(const cl::Context& context, co
 
 class Conv2DFactory : public FactoryBase<Conv2DBase, Conv2DConstructor> {
 public:
-  using ObjectMap = std::unordered_map<std::string, Conv2DPtr>;
+  using ObjectMap1 = std::unordered_map<std::string, Conv2DPtr>;
 
   template<class T>
   static bool register_implementation(const std::string& name) {
-    auto it = objects().find(name);
-    if (it == objects().end()) {
-      objects()[name] = std::make_unique<T>();
-    }
-    else {
-      return false;
-    }
-    return register_impl(name, true, [](const cl::Context& context, const Tensor& input, const Tensor& output,
+    return register_impl<T>(name, true, [](const cl::Context& context, const Tensor& input, const Tensor& output,
                       const Tensor& weights, const Tensor& bias,
                       const Padding& padding, const Size& stride, const Size& dilation) -> Conv2DPtr
       { return std::make_unique<T>(context, input, output, weights, bias, padding, stride, dilation); } );
   }
-  Size output_shape(const std::string& name) {
-
+  static Size output_shape(const std::string& name, const Tensor& input, const Tensor& weights,
+            const Padding& padding, const Size& stride = {1, 1}, const Size& dilation = {1, 1}) {
+    return FactoryBase::get_instance(name)->output_shape(input, weights, padding, stride, dilation);
   }
 private:
   Conv2DFactory(Conv2DFactory const&) = delete;
   void operator=(Conv2DFactory const&) = delete;
-  static ObjectMap& objects() {
-    static ObjectMap impl;
-    return impl;
-  }
 };
 
 

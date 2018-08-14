@@ -50,10 +50,11 @@ int main() {
     std::cout << "  " << e.first << std::endl;
   }
 
+
   Tensor X({1, 2, 7, 7}, {0, 0, 1, 1});
   Tensor W({3, 2, 3, 3});
   Tensor b({3}, {0});
-  Tensor Y;
+  Tensor Y(Conv2DFactory::output_shape("Conv2DNaive", X, W, sy_same));
 
   Conv2DPtr conv2d = Conv2D("Conv2DNaive", clContext, X, Y, W, b, sy_same);
   // alternative default implementation: Conv2DPtr conv2d = Conv2D(clContext, X, Y, W, b, sy_same);
@@ -61,7 +62,7 @@ int main() {
   // At this point we could query weights layout to perfrom weights reordering
   // ReorderWeights(clContext, Wo, W, conv2d->weights_layout())
 
-  Y.resize(conv2d->output_shape());
+//  Y.resize(conv2d->output_shape());
 
   conv2d->compile();
 

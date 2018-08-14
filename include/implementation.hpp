@@ -67,10 +67,13 @@ private:
   std::vector<Kernel> _kernels;
 };
 
+
 template<class T, typename ConstructorFunc>
 class FactoryBase {
 public:
   using RegistryMap = std::unordered_map<std::string, ConstructorFunc>;
+  using ImplPtr = std::shared_ptr<T>;
+  using ObjectMap = std::unordered_map<std::string, ImplPtr>; 
 
   static const RegistryMap& implementations() { return registry(); }
   static const std::string& default_implementation() { return default_name(); }
@@ -83,15 +86,23 @@ public:
     return it->second(std::forward<Args>(args)...);
   }
 protected:
+  template<typename TO>
   static bool register_impl(const std::string& name, bool default_impl, ConstructorFunc constructorFunc) {
     auto it = registry().find(name);
     if (it == registry().end()) {
+      objects()[name] = std::make_shared<TO>();
       registry()[name] = constructorFunc;
       if (default_impl)
         default_name() = name;
       return true;
     }
     return false;
+  }
+  static std::shared_ptr<T> get_instance(const std::string& name) {
+    auto it = objects().find(name != "" ? name : default_name());
+    if (it == objects().end())
+      throw std::runtime_error("ImplementationFactory::get_instance");
+    return objects()[name];
   }
 private:
   FactoryBase() {};
@@ -105,6 +116,11 @@ private:
 
   static RegistryMap& registry() {
     static RegistryMap impl;
+    return impl;
+  }
+
+  static ObjectMap& objects() {
+    static ObjectMap impl;
     return impl;
   }
 
