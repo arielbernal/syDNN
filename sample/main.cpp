@@ -58,8 +58,12 @@ int main() {
   // std::string bestImpl = Conv2DFactory::best_implementation(X, W, sy_same);
   // std::vector<ProfilingInfo> profilingInfo = Conv2DFactory::profiling_list(X, W, sy_same);
 
+  Conv2DBase& c = Conv2D("Conv2DNaive", clContext, X, Y, W, b, sy_same).get();
+
   std::cout << "Executing " << "Conv2DNaive" << std::endl;
   Conv2DPtr conv2d = Conv2D("Conv2DNaive", clContext, X, Y, W, b, sy_same);
+
+
   conv2d->compile();
 
   X.allocate(clContext);
