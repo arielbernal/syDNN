@@ -8,7 +8,7 @@
 #include <memory>
 #include <utilities.hpp>
 
-namespace syDNN {
+namespace sylib {
 
 const size_t SY_MAX_KERNELS = 5;
 
@@ -28,7 +28,7 @@ public:
     return queue.enqueueNDRangeKernel(_kernel, _global_work_offset, _global_work_size, _local_work_size, events, event);
   }
   void compile(const std::string& preamble = "", const std::string& options = "") {
-    _kernel = syDNN::compile_kernel(_context, preamble + _source, _name, options);
+    _kernel = sylib::compile_kernel(_context, preamble + _source, _name, options);
   }
 
   template<typename T>
@@ -126,4 +126,4 @@ private:
 };
 
 
-} // namespace syDNN
+} // namespace sylib

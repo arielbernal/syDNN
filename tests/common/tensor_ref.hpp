@@ -1,10 +1,11 @@
 #pragma once
 
-#include <size.hpp>
+#include <sylib/size.hpp>
 #include <stack>
+#include <cstring>
 #include <random>
 
-namespace syDNN {
+namespace sylib {
 
 namespace test {
 
@@ -277,4 +278,4 @@ void conv2d_ref1(const TensorRef<T>& input, const TensorRef<T>& weights, TensorR
 
 } // namespace test
 
-} // namespace syDNN
+} // namespace sylib

@@ -3,7 +3,8 @@
 #include <utilities.hpp>
 #include <conv2d/conv2d_impl.hpp>
 
-namespace syDNN {
+namespace sylib {
+namespace dnn {
 
 #define ROUNDUP(sz, n)      ((sz) + (n) - 1 - (((sz) + (n) - 1) % (n)))
 
@@ -107,4 +108,5 @@ const size_t Conv2D_bfyx_os_iyx_osv16::sub_group_size = 16;
 
 bool Conv2D_bfyx_os_iyx_osv16::_registered = Conv2DFactory::register_implementation<Conv2D_bfyx_os_iyx_osv16>("Conv2D_bfyx_os_iyx_osv16", false);
 
-} // namespace syDNN
+} // namespace dnn
+} // namespace sylib

@@ -1,7 +1,7 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.9)
 
-set(TARGET_NAME sptests)
-set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
+set(TARGET_NAME sample)
+set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -9,18 +9,16 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 find_package(OpenCV)
 find_package(OpenCL REQUIRED)
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
-
-include_directories( BEFORE
-                     ${CMAKE_CURRENT_SOURCE_DIR}
-                     ${PROJECT_SOURCE_DIR}/include
-                     ${PROJECT_SOURCE_DIR}/tests/common
-                     ${CMAKE_BINARY_DIR}/googletest-src/googletest/include
-                     ${OpenCL_INCLUDE_DIR} )
-
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 
 file(GLOB SOURCES "*.cpp")
-add_executable(${TARGET_NAME} ${SOURCES})
-#add_executable ( ${TARGET_NAME} implementation.cpp main.cpp )
+add_executable("${TARGET_NAME}" ${SOURCES})
 
-target_link_libraries( ${TARGET_NAME} ${OpenCL_LIBRARY} ${OpenCV_LIBS} -lpthread )
+target_include_directories("${TARGET_NAME}" PUBLIC  "${PROJECT_SOURCE_DIR}/include")
+target_include_directories("${TARGET_NAME}" PUBLIC  "${CMAKE_BINARY_DIR}/googletest-src/googletest/include")
+target_include_directories("${TARGET_NAME}" PUBLIC  "${PROJECT_SOURCE_DIR}/tests/common")
+target_include_directories("${TARGET_NAME}" PUBLIC  "${OpenCL_INCLUDE_DIR}")
+
+target_link_libraries("${TARGET_NAME}" ${OpenCL_LIBRARY} ${OpenCV_LIBS} "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/libsylib.so")
+
+

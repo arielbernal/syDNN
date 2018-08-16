@@ -6,10 +6,10 @@
 #include <numeric>
 #include <sstream>
 #include <iostream>
-#include <utilities.hpp>
+#include <vector>
+#include <sylib/sylibdef.hpp>
 
-namespace syDNN
-{
+namespace sylib {
 
 using size_value_type = int32_t;
 const size_t MAX_SIZE_DIM = 16;
@@ -219,8 +219,8 @@ inline Size align(const Size& v, const Size& alignment) {
     throw std::runtime_error("align(Size&, Size&)");
   Size s = Size::Zeros(v.size());
   for (size_t i = 0; i < s.size(); ++i)
-    s[i] = syDNN::align(v[i], alignment[i]);
+    s[i] = sylib::align(v[i], alignment[i]);
   return s;
 }
 
-} // namespace syDNN
+} // namespace sylib

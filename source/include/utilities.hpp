@@ -3,42 +3,9 @@
 #include <fstream>
 #include <iostream>
 #include <CL/cl.hpp>
+#include <sylib/tensor.hpp>
 
-namespace syDNN
-{
-
-inline size_t align(size_t val, size_t alignment)
-{
-    size_t diff = val % alignment;
-    return (diff == 0) ? val : val + alignment - diff;
-}
-
-inline size_t pad(size_t val, size_t alignment)
-{
-    size_t diff = val % alignment;
-    return (diff == 0) ? 0 : alignment - diff;
-}
-
-inline bool is_aligned(size_t val, size_t alignment)
-{
-  return !(val % alignment);
-}
-
-template <bool...> struct bool_pack;
-template <bool... bs>
-using all_true = std::is_same<bool_pack<true, bs...>, bool_pack<bs...,true>>;
-
-template <typename T, typename... Ts>
-using all_same = all_true<std::is_same<T, Ts>::value...>;
-
-template <typename... Ts>
-using all_integral = all_true<std::is_integral<Ts>::value...>;
-
-template <bool B, typename T = void>
-struct disable_if { typedef T type; };
-template <typename T>
-struct disable_if<true, T> {};
-
+namespace sylib {
 
 inline const char* OpenCLErrorString(cl_int err)
 {
@@ -155,6 +122,25 @@ inline std::string kernel_define(const std::string& def, Args&&... args) {
   return ss.str();
 }
 
+std::string getTensor4DOption(const std::string& name, const Tensor& t)
+{
+  std::stringstream ss;
+  ss << kernel_define(name + "_TYPE", "float");
+  ss << kernel_define(name + "_B", t.shape(0));
+  ss << kernel_define(name + "_F", t.shape(1));
+  ss << kernel_define(name + "_Y", t.shape(2));
+  ss << kernel_define(name + "_X", t.shape(3));
+  ss << kernel_define(name + "_B_PITCH", t.pitch(0));
+  ss << kernel_define(name + "_F_PITCH", t.pitch(1));
+  ss << kernel_define(name + "_Y_PITCH", t.pitch(2));
+  ss << kernel_define(name + "_X_PITCH", t.pitch(3));
+  ss << kernel_define(name + "_B_PADDING", t.padding(0));
+  ss << kernel_define(name + "_F_PADDING", t.padding(1));
+  ss << kernel_define(name + "_Y_PADDING", t.padding(2));
+  ss << kernel_define(name + "_X_PADDING", t.padding(3));
+  return ss.str();
+}
+
 inline std::string kernel_loop_unroll_macro() {
   std::string s = kernel_define("LOOP0(VAR, STMT)") +
                   kernel_define("LOOP1(VAR, STMT) (STMT); (VAR)++;") +
@@ -176,4 +162,4 @@ inline std::string kernel_loop_unroll_macro() {
   return s;
 }
 
-} // namespace syDNN
+} // namespace sylib

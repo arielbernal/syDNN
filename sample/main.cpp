@@ -2,16 +2,15 @@
 #include <map>
 #include <functional>
 
-#include <tensor.hpp>
-#include <sydnn.hpp>
-#include <conv2d.hpp>
+#include <sylib/dnn/conv2d.hpp>
 #include <tensor_ref.hpp>
 #include <test_common.hpp>
 
 
 int main() {
-  using namespace syDNN;
-  using namespace syDNN::test;
+  using namespace sylib;
+  using namespace sylib::dnn;
+  using namespace sylib::test;
 
   std::string platform_name = "Intel";
   std::vector<cl::Platform> all_platforms;
@@ -43,12 +42,12 @@ int main() {
   // conv2d_ref1(Xr, Wr, Yr, br, 2, 2);
   // //conv2d_ref1(Xr, Wr, Yr);
   // std::cout << Yr.to_string("%4.0f") << std::endl;
-  std::cout << "Default Conv2D Implementation : " << Conv2DFactory::default_implementation() << std::endl;
-  auto conv_impls = Conv2DFactory::implementations();
-  std::cout << "Implementations = " << conv_impls.size() << "\n";
-  for (auto &e : conv_impls) {
-    std::cout << "  " << e.second.name << " " << (e.second.default_implementation ? "default" : "not-default") << std::endl;
-  }
+  // std::cout << "Default Conv2D Implementation : " << Conv2DFactory::default_implementation() << std::endl;
+  // auto conv_impls = Conv2DFactory::implementations();
+  // std::cout << "Implementations = " << conv_impls.size() << "\n";
+  // for (auto &e : conv_impls) {
+  //   std::cout << "  " << e.second.name << " " << (e.second.default_implementation ? "default" : "not-default") << std::endl;
+  // }
 
   Tensor X({1, 2, 7, 7}, {0, 0, 1, 1});
   Tensor W({3, 2, 3, 3});

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(TestExample)
+project("sylib" VERSION 1.0.0 DESCRIPTION "sylib")
 
 set(CMAKE_CXX_STANDARD 11)
 
@@ -37,5 +37,5 @@ add_custom_target(copy-opencl-kernels ALL
 
 enable_testing()
 add_subdirectory(source)
-#add_subdirectory(sample)
-#add_subdirectory(tests)
+add_subdirectory(sample)
+add_subdirectory(tests)

@@ -2,11 +2,11 @@
 
 #include <iterator>
 #include <iostream>
-#include <sydnn.hpp>
-#include <size.hpp>
-#include <utilities.hpp>
+#include <CL/cl.hpp>
+#include <sylib/sylibdef.hpp>
+#include <sylib/size.hpp>
 
-namespace syDNN {
+namespace sylib {
 
 class Tensor {
 public:
@@ -191,24 +191,4 @@ private:
   uint8_t* _mapped_ptr = nullptr;
 };
 
-
-std::string getTensor4DOption(const std::string& name, const Tensor& t)
-{
-  std::stringstream ss;
-  ss << kernel_define(name + "_TYPE", "float");
-  ss << kernel_define(name + "_B", t.shape(0));
-  ss << kernel_define(name + "_F", t.shape(1));
-  ss << kernel_define(name + "_Y", t.shape(2));
-  ss << kernel_define(name + "_X", t.shape(3));
-  ss << kernel_define(name + "_B_PITCH", t.pitch(0));
-  ss << kernel_define(name + "_F_PITCH", t.pitch(1));
-  ss << kernel_define(name + "_Y_PITCH", t.pitch(2));
-  ss << kernel_define(name + "_X_PITCH", t.pitch(3));
-  ss << kernel_define(name + "_B_PADDING", t.padding(0));
-  ss << kernel_define(name + "_F_PADDING", t.padding(1));
-  ss << kernel_define(name + "_Y_PADDING", t.padding(2));
-  ss << kernel_define(name + "_X_PADDING", t.padding(3));
-  return ss.str();
-}
-
-} // namespace syDNN
+} // namespace sylib

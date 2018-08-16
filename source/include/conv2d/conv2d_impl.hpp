@@ -2,7 +2,8 @@
 
 #include <implementation.hpp>
 
-namespace syDNN {
+namespace sylib {
+namespace dnn {
 
 class Conv2DBase;
 
@@ -65,4 +66,5 @@ protected:
 };
 
 
-}
+} // namesapce dnn
+} // namespace sylib

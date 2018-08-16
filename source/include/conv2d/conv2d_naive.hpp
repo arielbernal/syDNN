@@ -2,7 +2,8 @@
 
 #include <conv2d/conv2d_impl.hpp>
 
-namespace syDNN {
+namespace sylib {
+namespace dnn {
 
 class Conv2DNaive : public Conv2DBase {
 public:
@@ -64,4 +65,5 @@ private:
 
 bool Conv2DNaive::_registered = Conv2DFactory::register_implementation<Conv2DNaive>("Conv2DNaive", true);
 
-} // namespace syDNN
+} // namespace dnn
+} // namespace sylib
