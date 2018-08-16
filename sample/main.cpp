@@ -47,30 +47,26 @@ int main() {
   auto conv_impls = Conv2DFactory::implementations();
   std::cout << "Implementations = " << conv_impls.size() << "\n";
   for (auto &e : conv_impls) {
-    std::cout << "  " << e.first << std::endl;
+    std::cout << "  " << e.second.name << " " << (e.second.default_implementation ? "default" : "not-default") << std::endl;
   }
 
   Tensor X({1, 2, 7, 7}, {0, 0, 1, 1});
   Tensor W({3, 2, 3, 3});
   Tensor b({3}, {0});
-  Tensor Y(Conv2DFactory::output_shape(X, W, sy_same));
+  Tensor Y(Conv2D::output_shape(X, W, sy_same));
 
   // std::string bestImpl = Conv2DFactory::best_implementation(X, W, sy_same);
   // std::vector<ProfilingInfo> profilingInfo = Conv2DFactory::profiling_list(X, W, sy_same);
 
-  Conv2DBase& c = Conv2D("Conv2DNaive", clContext, X, Y, W, b, sy_same).get();
-
   std::cout << "Executing " << "Conv2DNaive" << std::endl;
-  Conv2DPtr conv2d = Conv2D("Conv2DNaive", clContext, X, Y, W, b, sy_same);
-
-
-  conv2d->compile();
+  Conv2D conv2d("Conv2DNaive", clContext, X, Y, W, b, sy_same);
+  conv2d.compile();
 
   X.allocate(clContext);
   W.allocate(clContext);
   b.allocate(clContext);
   Y.allocate(clContext);
-  conv2d->set_arguments();
+  conv2d.set_arguments();
 
   X.map(clQueue, false);
   W.map(clQueue, false);
@@ -82,21 +78,21 @@ int main() {
   W.unmap(clQueue);
   b.unmap(clQueue);
 
-  cl_int err = conv2d->enqueue(clQueue);
+  cl_int err = conv2d.enqueue(clQueue);
   clQueue.finish();
 
   Y.map<float>(clQueue, true, CL_MAP_READ, nullptr, nullptr, &err);
   std::cout << Y.to_string<float>("%4.0f", true) << std::endl;
 
   std::cout << "Executing " << "Conv2D_bfyx_os_iyx_osv16" << std::endl;
-  Tensor Y1(Conv2DFactory::output_shape(X, W, sy_same));
-  Conv2DPtr conv2d1 = Conv2D("Conv2D_bfyx_os_iyx_osv16", clContext, X, Y1, W, b, sy_same);
-  conv2d1->compile();
+  Tensor Y1(Conv2D::output_shape(X, W, sy_same));
+  Conv2D conv2d1("Conv2D_bfyx_os_iyx_osv16", clContext, X, Y1, W, b, sy_same);
+  conv2d1.compile();
 
   Y1.allocate(clContext);
-  conv2d1->set_arguments();
+  conv2d1.set_arguments();
 
-  err = conv2d1->enqueue(clQueue);
+  err = conv2d1.enqueue(clQueue);
   clQueue.finish();
 
   Y1.map<float>(clQueue, true, CL_MAP_READ, nullptr, nullptr, &err);

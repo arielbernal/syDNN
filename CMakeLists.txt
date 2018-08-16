@@ -36,5 +36,6 @@ add_custom_target(copy-opencl-kernels ALL
     DEPENDS ${TestExample})
 
 enable_testing()
-add_subdirectory(sample)
-add_subdirectory(tests)
+add_subdirectory(source)
+#add_subdirectory(sample)
+#add_subdirectory(tests)
