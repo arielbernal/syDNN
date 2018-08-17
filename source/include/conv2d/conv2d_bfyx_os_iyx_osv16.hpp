@@ -91,11 +91,11 @@ public:
   virtual void set_arguments() {
     Kernel& k = kernel();
     k.global_work_size(cl::NDRange(_output.shape(3), _output.shape(2), _output.shape(1) * _output.shape(0)));
-    k.add_argument(_input.buffer());
-    k.add_argument(_output.buffer());
-    k.add_argument(_weights.buffer());
+    k.add_argument(_input());
+    k.add_argument(_output());
+    k.add_argument(_weights());
     if (_bias)
-      k.add_argument(_bias.buffer());
+      k.add_argument(_bias());
     size_t leftovers = 0;
     k.add_argument(leftovers);
   }
