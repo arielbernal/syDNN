@@ -69,16 +69,14 @@ public:
   bool allocated() const { return _allocated; }
   bool mapped() const { return _mapped_ptr != nullptr; }
 
-  cl::Buffer buffer() const { return _buffer; }
+  operator bool() const { return _N > 0; }
   cl::Buffer operator()() const { return _buffer; }
   void operator()(cl::Buffer& buffer) {
     _buffer = buffer;
     _allocated = true;
   }
 
-  operator bool() const {
-    return _N > 0;
-  }
+
 
   template<typename T = void>
   T* mapped_ptr() { return static_cast<T*>(_mapped_ptr); }
