@@ -32,16 +32,16 @@ public:
   void compile() {
     std::cout << "Conv2D_bfyx_os_iyx_osv16::compile\n";
 
-    const int32_t of_maps = _output->shape(1);
-    const int32_t output_block_width = sub_group_size - _weights->shape(3) + 1;
+    const int32_t of_maps = _output.shape(1);
+    const int32_t output_block_width = sub_group_size - _weights.shape(3) + 1;
     const int32_t output_block_height = 2;
     const int32_t prefecth = 4;
 
     // Number of elements in X dimension needed from input to compute output block without re-reading input.
-    int32_t input_block_req_width = (output_block_width - 1) * _stride[1] + (_weights->shape(3) - 1) * _dilation[1] + 1;
+    int32_t input_block_req_width = (output_block_width - 1) * _stride[1] + (_weights.shape(3) - 1) * _dilation[1] + 1;
     // Number of elements in Y dimension needed from input to compute output block without re-reading input.
-    int32_t input_block_req_height = (output_block_height - 1) * _stride[0] + (_weights->shape(2) - 1) * _dilation[0] + 1;
-    int32_t read_chunk_size = sub_group_size / 2; // fp16 used then -> sub_group_size
+    int32_t input_block_req_height = (output_block_height - 1) * _stride[0] + (_weights.shape(2) - 1) * _dilation[0] + 1;
+    int32_t read_chunk_size = sub_group_size / 2; // fp16 used then . sub_group_size
     int32_t min_read_size = sub_group_size;
 
     // Required number of elements in X dimension rounded to nearest >= read chunk size.
@@ -59,22 +59,22 @@ public:
     preamble << kernel_define("IN_BLOCK_ARRAY_SIZE", input_block_read_width);
     preamble << kernel_define("IN_BLOCK_WIDTH", input_block_read_width);
     preamble << kernel_define("PREFETCH", prefecth);
-    preamble << kernel_define("FILTER_OFM_NUM", _weights->shape(0));
-    preamble << kernel_define("FILTER_IFM_NUM", _weights->shape(1));
-    preamble << kernel_define("FILTER_SIZE_Y", _weights->shape(2));
-    preamble << kernel_define("FILTER_SIZE_X", _weights->shape(3));
-    preamble << kernel_define("INPUT0_BATCH_PITCH", _input->pitch(0));
-    preamble << kernel_define("INPUT0_FEATURE_PITCH", _input->pitch(1));
-    preamble << kernel_define("INPUT0_Y_PITCH", _input->pitch(2));
-    preamble << kernel_define("INPUT0_X_PITCH", _input->pitch(3));
+    preamble << kernel_define("FILTER_OFM_NUM", _weights.shape(0));
+    preamble << kernel_define("FILTER_IFM_NUM", _weights.shape(1));
+    preamble << kernel_define("FILTER_SIZE_Y", _weights.shape(2));
+    preamble << kernel_define("FILTER_SIZE_X", _weights.shape(3));
+    preamble << kernel_define("INPUT0_BATCH_PITCH", _input.pitch(0));
+    preamble << kernel_define("INPUT0_FEATURE_PITCH", _input.pitch(1));
+    preamble << kernel_define("INPUT0_Y_PITCH", _input.pitch(2));
+    preamble << kernel_define("INPUT0_X_PITCH", _input.pitch(3));
     preamble << kernel_define("INPUT0_OFFSET_WITH_PADDING", 0);
-    preamble << kernel_define("OUTPUT_BATCH_PITCH", _output->pitch(0));
-    preamble << kernel_define("OUTPUT_FEATURE_PITCH", _output->pitch(1));
-    preamble << kernel_define("OUTPUT_Y_PITCH", _output->pitch(2));
-    preamble << kernel_define("OUTPUT_X_PITCH", _output->pitch(3));
+    preamble << kernel_define("OUTPUT_BATCH_PITCH", _output.pitch(0));
+    preamble << kernel_define("OUTPUT_FEATURE_PITCH", _output.pitch(1));
+    preamble << kernel_define("OUTPUT_Y_PITCH", _output.pitch(2));
+    preamble << kernel_define("OUTPUT_X_PITCH", _output.pitch(3));
     preamble << kernel_define("OUTPUT_OFFSET", 0);
-    preamble << kernel_define("OUTPUT_SIZE_Y", _output->shape(2));
-    preamble << kernel_define("OUTPUT_SIZE_X", _output->shape(3));
+    preamble << kernel_define("OUTPUT_SIZE_Y", _output.shape(2));
+    preamble << kernel_define("OUTPUT_SIZE_X", _output.shape(3));
     preamble << kernel_define("STRIDE_SIZE_Y", _stride[0]);
     preamble << kernel_define("STRIDE_SIZE_X", _stride[1]);
     preamble << kernel_define("DILATION_SIZE_Y", _dilation[0]);
@@ -90,12 +90,12 @@ public:
 
   virtual void set_arguments() {
     Kernel& k = kernel();
-    k.global_work_size(cl::NDRange(_output->shape(3), _output->shape(2), _output->shape(1) * _output->shape(0)));
-    k.add_argument(_input->buffer());
-    k.add_argument(_output->buffer());
-    k.add_argument(_weights->buffer());
+    k.global_work_size(cl::NDRange(_output.shape(3), _output.shape(2), _output.shape(1) * _output.shape(0)));
+    k.add_argument(_input.buffer());
+    k.add_argument(_output.buffer());
+    k.add_argument(_weights.buffer());
     if (_bias)
-      k.add_argument(_bias->buffer());
+      k.add_argument(_bias.buffer());
     size_t leftovers = 0;
     k.add_argument(leftovers);
   }

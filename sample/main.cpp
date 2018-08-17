@@ -54,6 +54,11 @@ int main() {
   Tensor b({3}, {0});
   Tensor Y(Conv2D::output_shape(X, W, sy_same));
 
+  X.allocate(clContext);
+  W.allocate(clContext);
+  b.allocate(clContext);
+  Y.allocate(clContext);
+
   // std::string bestImpl = Conv2DFactory::best_implementation(X, W, sy_same);
   // std::vector<ProfilingInfo> profilingInfo = Conv2DFactory::profiling_list(X, W, sy_same);
 
@@ -61,10 +66,6 @@ int main() {
   Conv2D conv2d("Conv2DNaive", clContext, X, Y, W, b, sy_same);
   conv2d.compile();
 
-  X.allocate(clContext);
-  W.allocate(clContext);
-  b.allocate(clContext);
-  Y.allocate(clContext);
   conv2d.set_arguments();
 
   X.map(clQueue, false);
@@ -83,19 +84,19 @@ int main() {
   Y.map<float>(clQueue, true, CL_MAP_READ, nullptr, nullptr, &err);
   std::cout << Y.to_string<float>("%4.0f", true) << std::endl;
 
-  std::cout << "Executing " << "Conv2D_bfyx_os_iyx_osv16" << std::endl;
-  Tensor Y1(Conv2D::output_shape(X, W, sy_same));
-  Conv2D conv2d1("Conv2D_bfyx_os_iyx_osv16", clContext, X, Y1, W, b, sy_same);
-  conv2d1.compile();
+  // std::cout << "Executing " << "Conv2D_bfyx_os_iyx_osv16" << std::endl;
+  // Tensor Y1(Conv2D::output_shape(X, W, sy_same));
+  // Conv2D conv2d1("Conv2D_bfyx_os_iyx_osv16", clContext, X, Y1, W, b, sy_same);
+  // conv2d1.compile();
 
-  Y1.allocate(clContext);
-  conv2d1.set_arguments();
+  // Y1.allocate(clContext);
+  // conv2d1.set_arguments();
 
-  err = conv2d1.enqueue(clQueue);
-  clQueue.finish();
+  // err = conv2d1.enqueue(clQueue);
+  // clQueue.finish();
 
-  Y1.map<float>(clQueue, true, CL_MAP_READ, nullptr, nullptr, &err);
-  std::cout << Y1.to_string<float>("%4.0f", true) << std::endl;
+  // Y1.map<float>(clQueue, true, CL_MAP_READ, nullptr, nullptr, &err);
+  // std::cout << Y1.to_string<float>("%4.0f", true) << std::endl;
 
 
 // Graph API-------------------------------------------------------------------------------------------------------

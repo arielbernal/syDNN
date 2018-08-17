@@ -70,6 +70,15 @@ public:
   bool mapped() const { return _mapped_ptr != nullptr; }
 
   cl::Buffer buffer() const { return _buffer; }
+  cl::Buffer operator()() const { return _buffer; }
+  void operator()(cl::Buffer& buffer) {
+    _buffer = buffer;
+    _allocated = true;
+  }
+
+  operator bool() const {
+    return _N > 0;
+  }
 
   template<typename T = void>
   T* mapped_ptr() { return static_cast<T*>(_mapped_ptr); }
@@ -79,7 +88,6 @@ public:
       throw std::runtime_error("Tensor::allocate");
     cl_int error;
     _buffer = cl::Buffer(context, flags, _buffer_size, host_ptr, &error);
-    _context = context;
     _allocated = (error == CL_SUCCESS);
     if (err != nullptr) *err = error;
   }
@@ -175,7 +183,6 @@ protected:
     }
   }
 private:
-  cl::Context _context;
   Size _shape;
   Size _padding;
   Size _alignment;

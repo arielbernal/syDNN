@@ -33,10 +33,10 @@ public:
   Conv2DBase(const cl::Context& context, const Tensor& input, const Tensor& output,
             const Tensor& weights, const Tensor& bias, const Padding& padding, const Size& stride, const Size& dilation)
   : Implementation(context)
-  , _input(&input)
-  , _output(&output)
-  , _weights(&weights)
-  , _bias(&bias)
+  , _input(input)
+  , _output(output)
+  , _weights(weights)
+  , _bias(bias)
   , _padding(padding)
   , _stride(stride)
   , _dilation(dilation)
@@ -54,10 +54,10 @@ public:
   virtual void set_arguments() = 0;
 
 protected:
-  const Tensor* _input;
-  const Tensor* _output;
-  const Tensor* _weights;
-  const Tensor* _bias;
+  const Tensor _input;
+  const Tensor _output;
+  const Tensor _weights;
+  const Tensor _bias;
   Padding _padding;
   Size _stride;
   Size _dilation;
