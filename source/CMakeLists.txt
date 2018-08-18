@@ -13,14 +13,13 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 
 # =================================== Link targets and dependencies ====================================
 # Main shared library.
-file(GLOB SOURCES "*.cpp") # yes I'm lazy
+file(GLOB SOURCES "*.cpp" "dnn/*.cpp") # yes I'm lazy
 add_library("${TARGET_NAME}" SHARED ${SOURCES})
 
 set_target_properties("${TARGET_NAME}" PROPERTIES VERSION "${PROJECT_VERSION}")
 set_target_properties("${TARGET_NAME}" PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 
 target_include_directories("${TARGET_NAME}" PUBLIC  "${PROJECT_SOURCE_DIR}/include")
-target_include_directories("${TARGET_NAME}" PUBLIC  ".")
 target_include_directories("${TARGET_NAME}" PRIVATE "${PROJECT_SOURCE_DIR}/source/include")
 target_include_directories("${TARGET_NAME}" PRIVATE ${OpenCL_INCLUDE_DIR})
 

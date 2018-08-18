@@ -122,7 +122,7 @@ inline std::string kernel_define(const std::string& def, Args&&... args) {
   return ss.str();
 }
 
-std::string getTensor4DOption(const std::string& name, const Tensor& t)
+inline std::string getTensor4DOption(const std::string& name, const Tensor& t)
 {
   std::stringstream ss;
   ss << kernel_define(name + "_TYPE", "float");
