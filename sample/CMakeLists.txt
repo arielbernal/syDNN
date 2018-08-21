@@ -13,6 +13,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 
 file(GLOB SOURCES "*.cpp")
 add_executable("${TARGET_NAME}" ${SOURCES})
+add_dependencies("${TARGET_NAME}" sylib)
 
 target_include_directories("${TARGET_NAME}" PUBLIC  "${PROJECT_SOURCE_DIR}/include")
 target_include_directories("${TARGET_NAME}" PUBLIC  "${CMAKE_BINARY_DIR}/googletest-src/googletest/include")

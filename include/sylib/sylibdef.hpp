@@ -19,7 +19,8 @@ enum Padding : int32_t {
 
 enum Layout : int32_t {
   sy_nchw,
-  sy_nhwc
+  sy_nhwc,
+  sy_nw
 };
 
 

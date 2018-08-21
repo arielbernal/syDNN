@@ -1,28 +1,20 @@
-// #pragma once
+#pragma once
 
-// #include <memory>
-// #include <sylib/tensor.hpp>
-// #include <sylib/size.hpp>
+#include <memory>
 
-// namespace sylib {
-// namespace dnn {
+#include <sylib/syop.hpp>
+#include <sylib/tensor.hpp>
+#include <sylib/size.hpp>
 
-// class DenseDBase;
+namespace sylib {
+namespace dnn {
 
-// class Dense {
-// public:
-//   Dense(const std::string& name, const cl::Context& context, const Tensor& input, const Tensor& output,
-//             const Tensor& weights, const Tensor& bias);
+class Dense : public Operation {
+public:
+  Dense(const std::string& name, const cl::Context& context, const Tensor& input, const Tensor& output,
+          const Tensor& weights, const Tensor& bias);
+  static Size output_shape(const Tensor& input, const Tensor& weights);
+};
 
-//   Dense(const cl::Context& context, const Tensor& input, const Tensor& output,
-//             const Tensor& weights, const Tensor& bias);
-//   ~Dense();
-//   void compile();
-//   void set_arguments();
-//   cl_int enqueue(cl::CommandQueue queue, const std::vector<cl::Event>* events = nullptr, cl::Event* event = nullptr);
-// private:
-//   std::unique_ptr<DenseBase> _ptr;
-// };
-
-// } // dnn
-// } // sylib
+} // dnn
+} // sylib

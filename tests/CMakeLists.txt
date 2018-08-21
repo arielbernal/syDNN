@@ -13,6 +13,8 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 file(GLOB TEST_SRC "*.cpp" "./common/*.cpp")
 
 add_executable(${TARGET_NAME} ${TEST_SRC})
+add_dependencies("${TARGET_NAME}" sylib)
+
 target_link_libraries(${TARGET_NAME} gtest gmock_main ${OpenCL_LIBRARY}  "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/libsylib.so")
 target_include_directories("${TARGET_NAME}" PRIVATE  "${PROJECT_SOURCE_DIR}/include")
 target_include_directories("${TARGET_NAME}" PRIVATE  "${CMAKE_BINARY_DIR}/googletest-src/googletest/include")

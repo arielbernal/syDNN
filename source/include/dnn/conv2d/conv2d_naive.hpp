@@ -33,8 +33,6 @@ public:
     preamble << getTensor4DOption("FILTER", _weights);
     preamble << getTensor4DOption("OUTPUT", _output);
     preamble << kernel_define("COMPUTE_TYPE", "float");
-
-    preamble << kernel_define("COMPUTE_TYPE", "float");
     preamble << kernel_define("STRIDE_Y", _stride[0]);
     preamble << kernel_define("STRIDE_X", _stride[1]);
     preamble << kernel_define("DILATION_Y", _dilation[0]);
@@ -62,6 +60,8 @@ public:
 private:
   static bool _registered;
 };
+
+bool Conv2DNaive::_registered = Conv2DFactory::register_implementation<Conv2DNaive>("Conv2DNaive", true);
 
 } // namespace dnn
 } // namespace sylib

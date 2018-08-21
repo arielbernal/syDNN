@@ -141,6 +141,19 @@ inline std::string getTensor4DOption(const std::string& name, const Tensor& t)
   return ss.str();
 }
 
+inline std::string getTensor2DOption(const std::string& name, const Tensor& t)
+{
+  std::stringstream ss;
+  ss << kernel_define(name + "_TYPE", "float");
+  ss << kernel_define(name + "_Y", t.shape(0));
+  ss << kernel_define(name + "_X", t.shape(1));
+  ss << kernel_define(name + "_Y_PITCH", t.pitch(0));
+  ss << kernel_define(name + "_X_PITCH", t.pitch(1));
+  ss << kernel_define(name + "_Y_PADDING", t.padding(0));
+  ss << kernel_define(name + "_X_PADDING", t.padding(1));
+  return ss.str();
+}
+
 inline std::string kernel_loop_unroll_macro() {
   std::string s = kernel_define("LOOP0(VAR, STMT)") +
                   kernel_define("LOOP1(VAR, STMT) (STMT); (VAR)++;") +

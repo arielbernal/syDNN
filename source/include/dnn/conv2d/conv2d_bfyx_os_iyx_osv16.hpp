@@ -104,6 +104,8 @@ private:
   static bool _registered;
 };
 
+bool Conv2D_bfyx_os_iyx_osv16::_registered = Conv2DFactory::register_implementation<Conv2D_bfyx_os_iyx_osv16>("Conv2D_bfyx_os_iyx_osv16", false);
+
 
 } // namespace dnn
 } // namespace sylib

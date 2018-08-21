@@ -3,6 +3,7 @@
 #include <functional>
 
 #include <sylib/dnn/conv2d.hpp>
+#include <sylib/dnn/dense.hpp>
 #include <tensor_ref.hpp>
 #include <test_common.hpp>
 
@@ -47,41 +48,57 @@ int main() {
   // for (auto &e : conv_impls) {
   //   std::cout << "  " << e.second.name << " " << (e.second.default_implementation ? "default" : "not-default") << std::endl;
   // }
+  {
+    Tensor X({1, 2, 7, 7}, {0, 0, 1, 1}); // bfyx
+    Tensor W({3, 2, 3, 3});
+    Tensor b({3}, {0});
+    Tensor Y(Conv2D::output_shape(X, W, sy_same));
 
-  Tensor X({1, 2, 7, 7}, {0, 0, 1, 1});
-  Tensor W({3, 2, 3, 3});
-  Tensor b({3}, {0});
-  Tensor Y(Conv2D::output_shape(X, W, sy_same));
+    X.allocate(clContext);
+    W.allocate(clContext);
+    b.allocate(clContext);
+    Y.allocate(clContext);
 
-  X.allocate(clContext);
-  W.allocate(clContext);
-  b.allocate(clContext);
-  Y.allocate(clContext);
+    // std::string bestImpl = Conv2DFactory::best_implementation(X, W, sy_same);
+    // std::vector<ProfilingInfo> profilingInfo = Conv2DFactory::profiling_list(X, W, sy_same);
 
-  // std::string bestImpl = Conv2DFactory::best_implementation(X, W, sy_same);
-  // std::vector<ProfilingInfo> profilingInfo = Conv2DFactory::profiling_list(X, W, sy_same);
+    std::cout << "Executing " << "Conv2DNaive" << std::endl;
+    Conv2D conv2d("Conv2DNaive", clContext, X, Y, W, b, sy_same);
+    conv2d.compile();
 
-  std::cout << "Executing " << "Conv2DNaive" << std::endl;
-  Conv2D conv2d("Conv2DNaive", clContext, X, Y, W, b, sy_same);
-  conv2d.compile();
+    conv2d.set_arguments();
 
-  conv2d.set_arguments();
+    X.map(clQueue, false);
+    W.map(clQueue, false);
+    b.map(clQueue);
+    X.copy((void*)Xr.data());
+    W.copy((void*)Wr.data());
+    b.copy((void*)br.data());
+    X.unmap(clQueue);
+    W.unmap(clQueue);
+    b.unmap(clQueue);
 
-  X.map(clQueue, false);
-  W.map(clQueue, false);
-  b.map(clQueue);
-  X.copy((void*)Xr.data());
-  W.copy((void*)Wr.data());
-  b.copy((void*)br.data());
-  X.unmap(clQueue);
-  W.unmap(clQueue);
-  b.unmap(clQueue);
+    cl_int err = conv2d.enqueue(clQueue);
+    clQueue.finish();
 
-  cl_int err = conv2d.enqueue(clQueue);
-  clQueue.finish();
+    Y.map<float>(clQueue, true, CL_MAP_READ, nullptr, nullptr, &err);
+    std::cout << Y.to_string<float>("%4.0f", true) << std::endl;
+  }
+  {
+    Tensor X(Size{1, 4}); // yx
+    Tensor W(Size{5, 4}); // yx
+    Tensor b({5}, {0});
+    Tensor Y(Size{1, 5});
 
-  Y.map<float>(clQueue, true, CL_MAP_READ, nullptr, nullptr, &err);
-  std::cout << Y.to_string<float>("%4.0f", true) << std::endl;
+    Dense dense("DenseNaive", clContext, X, Y, W, b);
+    dense.compile();
+    dense.set_arguments();
+    cl_int err = dense.enqueue(clQueue);
+    clQueue.finish();
+
+    Y.map<float>(clQueue, true, CL_MAP_READ, nullptr, nullptr, &err);
+    std::cout << Y.to_string<float>("%4.0f", true) << std::endl;
+  }
 
   // std::cout << "Executing " << "Conv2D_bfyx_os_iyx_osv16" << std::endl;
   // Tensor Y1(Conv2D::output_shape(X, W, sy_same));

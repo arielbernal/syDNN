@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.9)
 
-set(TARGET_NAME sylib)
+set(TARGET_NAME "sylib")
 
 find_package(OpenCL REQUIRED)
 
@@ -17,6 +17,8 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 # Main shared library.
 file(GLOB SOURCES "*.cpp" "dnn/*.cpp") # yes I'm lazy
 add_library("${TARGET_NAME}" SHARED ${SOURCES})
+
+message(STATUS "Sources = " ${SOURCES})
 
 set_target_properties("${TARGET_NAME}" PROPERTIES VERSION "${PROJECT_VERSION}")
 set_target_properties("${TARGET_NAME}" PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
