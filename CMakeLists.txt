@@ -1,8 +1,6 @@
 cmake_minimum_required(VERSION 3.5)
 project("sylib" VERSION 1.0.0 DESCRIPTION "sylib")
 
-set(CMAKE_CXX_STANDARD 11)
-
 add_definitions(-DCL_HPP_MINIMUM_OPENCL_VERSION=120 -DCL_HPP_TARGET_OPENCL_VERSION=120)
 
 # Download and unpack googletest at configure time

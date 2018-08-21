@@ -2,11 +2,9 @@
 #include <map>
 #include <functional>
 
-#include <sylib/syop.hpp>
 #include <sylib/dnn/conv2d.hpp>
 #include <tensor_ref.hpp>
 #include <test_common.hpp>
-
 
 int main() {
   using namespace sylib;
