@@ -28,6 +28,9 @@ public:
 
   virtual void compile() = 0;
   virtual void set_arguments() = 0;
+  std::string test() {
+    return "DenseBase test";
+  }
 
 protected:
   const Tensor _input;

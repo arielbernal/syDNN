@@ -85,10 +85,33 @@ int main() {
     std::cout << Y.to_string<float>("%4.0f", true) << std::endl;
   }
   {
-    Tensor X(Size{1, 4}); // yx
-    Tensor W(Size{5, 4}); // yx
-    Tensor b({5}, {0});
-    Tensor Y(Size{1, 5});
+    TensorRefF Xr = RandomTensorRef({1, 3}, {0, 0}, 1, 10);
+    TensorRefF Wr = RandomTensorRef({3, 4}, {0, 0}, 1, 10);
+    TensorRefF Yr = TensorRefF({1, 4}, {0, 0});
+    TensorRefF br = RandomTensorRef({4}, {0}, 1, 10);
+
+    Tensor X(Size{1, 3}); // yx
+    Tensor W(Size{3, 4}); // yx
+    Tensor b(Size{4});
+    Tensor Y(Size{1, 4});
+
+    std::cout << "Output shape = " << Dense::output_shape(X, W) << std::endl;
+    std::cout << "Input type size = " << Dense::input_type("DenseNaive").size() << std::endl;
+
+    X.allocate(clContext);
+    W.allocate(clContext);
+    b.allocate(clContext);
+    Y.allocate(clContext);
+
+    X.map(clQueue, false);
+    W.map(clQueue, false);
+    b.map(clQueue);
+    X.copy((void*)Xr.data());
+    W.copy((void*)Wr.data());
+    b.copy((void*)br.data());
+    X.unmap(clQueue);
+    W.unmap(clQueue);
+    b.unmap(clQueue);
 
     Dense dense("DenseNaive", clContext, X, Y, W, b);
     dense.compile();
@@ -96,8 +119,14 @@ int main() {
     cl_int err = dense.enqueue(clQueue);
     clQueue.finish();
 
+    X.map<float>(clQueue, true, CL_MAP_READ, nullptr, nullptr, &err);
+    std::cout <<"X = " << X.to_string<float>("%4.0f", true) << std::endl;
+    W.map<float>(clQueue, true, CL_MAP_READ, nullptr, nullptr, &err);
+    std::cout <<"W = " << W.to_string<float>("%4.0f", true) << std::endl;
+    b.map<float>(clQueue, true, CL_MAP_READ, nullptr, nullptr, &err);
+    std::cout <<"b = " << b.to_string<float>("%4.0f", true) << std::endl;
     Y.map<float>(clQueue, true, CL_MAP_READ, nullptr, nullptr, &err);
-    std::cout << Y.to_string<float>("%4.0f", true) << std::endl;
+    std::cout <<"Y = " << Y.to_string<float>("%4.0f", true) << std::endl;
   }
 
   // std::cout << "Executing " << "Conv2D_bfyx_os_iyx_osv16" << std::endl;

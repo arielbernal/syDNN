@@ -7,10 +7,6 @@
 namespace sylib {
 namespace dnn {
 
-// register all implementations
-
-
-
 // Operation constructor
 Conv2D::Conv2D(const std::string& name, const cl::Context& context, const Tensor& input, const Tensor& output,
             const Tensor& weights, const Tensor& bias, const Padding& padding,

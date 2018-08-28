@@ -91,6 +91,15 @@ public:
       throw std::runtime_error("ImplementationFactory::create");
     return it->second.f(std::forward<Args>(args)...);
   }
+  static std::shared_ptr<T> get_instance(const std::string& name) {
+    std::cout << "Here Implementation::get_instance\n";
+    auto it = registry().find(name != "" ? name : default_name());
+    if (it == registry().end())
+      throw std::runtime_error("ImplementationFactory::get_instance");
+    std::cout << it->second.name << " " << it->second.default_implementation << " "
+     << " " << (&it->second.f) << " " << &(it->second.object) <<"\n";
+    return it->second.object;
+  }
 protected:
   template<typename TO>
   static bool register_impl(const std::string& name, bool default_impl, ConstructorFunc constructorFunc) {
@@ -102,12 +111,6 @@ protected:
       return true;
     }
     return false;
-  }
-  static std::shared_ptr<T> get_instance(const std::string& name) {
-    auto it = registry().find(name != "" ? name : default_name());
-    if (it == registry().end())
-      throw std::runtime_error("ImplementationFactory::get_instance");
-    return it->second.object;
   }
 private:
   FactoryBase() {};

@@ -14,6 +14,7 @@ public:
   Dense(const std::string& name, const cl::Context& context, const Tensor& input, const Tensor& output,
           const Tensor& weights, const Tensor& bias);
   static Size output_shape(const Tensor& input, const Tensor& weights);
+  static std::vector<Type> input_type(const std::string& name);
 };
 
 } // dnn

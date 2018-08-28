@@ -23,18 +23,28 @@ public:
   std::vector<Type> output_type() override { return {sy_fp32, sy_fp16}; }
   std::vector<Type> weights_type() override { return {sy_fp32, sy_fp16}; }
 
+  std::string test() {
+    return "DenseNaive test";
+  }
+
   void compile() override {
     std::cout << "DenseNaive::compile\n";
     std::stringstream preamble;
     preamble << kernel_define("FUNC(x)", "x");
     preamble << kernel_define("FUNC_CALL(x)", "x");
     preamble << kernel_define("KERNEL(x)", "void __kernel x");
-    preamble << getTensor2DOption("INPUT", _input);
-    preamble << getTensor2DOption("FILTER", _weights);
-    preamble << getTensor2DOption("OUTPUT", _output);
+    preamble << kernel_define("INPUT_TYPE", "float");
+    preamble << kernel_define("INPUT_Y_PITCH", _input.pitch(0));
+    preamble << kernel_define("INPUT_X_PITCH", _input.pitch(1));
+    preamble << kernel_define("INPUT_X", _input.shape(1));
+    preamble << kernel_define("FILTER_TYPE", "float");
+    preamble << kernel_define("FILTER_Y_PITCH", _weights.pitch(0));
+    preamble << kernel_define("FILTER_X_PITCH", _weights.pitch(1));
+    preamble << kernel_define("OUTPUT_TYPE", "float");
+    preamble << kernel_define("OUTPUT_Y", _output.shape(0));
+    preamble << kernel_define("OUTPUT_Y_PITCH", _output.pitch(0));
+    preamble << kernel_define("OUTPUT_X_PITCH", _output.pitch(1));
     preamble << kernel_define("COMPUTE_TYPE", "float");
-    preamble << kernel_define("INPUT_Y_OFFSET", 0);
-    preamble << kernel_define("INPUT_X_OFFSET", 0);
     if (_bias) {
       preamble << kernel_define("BIAS_TYPE", "float");
       preamble << kernel_define("BIAS_TERM", "true");

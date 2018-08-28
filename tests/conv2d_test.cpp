@@ -3,12 +3,9 @@
 #include <sylib/size.hpp>
 #include <sylib/dnn/conv2d.hpp>
 
-
-using namespace sylib;
-using namespace sylib::dnn;
-using namespace sylib::test;
-
-
+// using namespace sylib;
+// using namespace sylib::dnn;
+// using namespace sylib::test;
 
 // template<typename T>
 // TensorRef<T> conv2d_ref(TensorRef<T>& input, TensorRef<T>& weights, TensorRef<T>& bias,

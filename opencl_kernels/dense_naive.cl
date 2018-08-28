@@ -27,15 +27,15 @@ __kernel void dense(
     )
 {
     const uint y = get_global_id(0);
-#if OUTPUT_B == 1
+#if OUTPUT_Y == 1
     const uint b = 0;
 #else
     const uint b = get_global_id(1);
 #endif
     COMPUTE_TYPE acc = (COMPUTE_TYPE)(0);
     for (uint x = 0; x < INPUT_X; ++x) {
-        uint input_idx = GET_DATA_INDEX_2D(INPUT, b, x);
-        uint filter_idx = GET_DATA_INDEX_2D(FILTER, y, x);
+        uint input_idx = GET_DATA_INDEX_2D(INPUT, b, x) ;
+        uint filter_idx = GET_DATA_INDEX_2D(FILTER, x, y);
         acc += input[input_idx] * weights[filter_idx];
     }
 
