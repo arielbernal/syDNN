@@ -92,12 +92,9 @@ public:
     return it->second.f(std::forward<Args>(args)...);
   }
   static std::shared_ptr<T> get_instance(const std::string& name) {
-    std::cout << "Here Implementation::get_instance\n";
     auto it = registry().find(name != "" ? name : default_name());
     if (it == registry().end())
       throw std::runtime_error("ImplementationFactory::get_instance");
-    std::cout << it->second.name << " " << it->second.default_implementation << " "
-     << " " << (&it->second.f) << " " << &(it->second.object) <<"\n";
     return it->second.object;
   }
 protected:
@@ -105,7 +102,7 @@ protected:
   static bool register_impl(const std::string& name, bool default_impl, ConstructorFunc constructorFunc) {
     auto it = registry().find(name);
     if (it == registry().end()) {
-      registry()[name] = { name, default_impl, constructorFunc, std::shared_ptr<T>() };
+      registry()[name] = { name, default_impl, constructorFunc, std::make_shared<TO>() };
       if (default_impl)
         default_name() = name;
       return true;

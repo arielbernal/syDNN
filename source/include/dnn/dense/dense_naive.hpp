@@ -23,10 +23,6 @@ public:
   std::vector<Type> output_type() override { return {sy_fp32, sy_fp16}; }
   std::vector<Type> weights_type() override { return {sy_fp32, sy_fp16}; }
 
-  std::string test() {
-    return "DenseNaive test";
-  }
-
   void compile() override {
     std::cout << "DenseNaive::compile\n";
     std::stringstream preamble;

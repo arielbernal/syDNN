@@ -34,21 +34,12 @@ int main() {
      std::cout << c.getInfo<CL_DEVICE_NAME>() << std::endl;
   }
 
-  TensorRefF Xr = RandomTensorRef({1, 2, 7, 7}, {0, 0, 1, 1}, 1, 10);
-  TensorRefF Wr = RandomTensorRef({3, 2, 3, 3}, {0, 0, 0, 0}, 1, 10);
-  TensorRefF Yr = TensorRefF({1, 3, 7, 7}, {0, 0, 0, 0});
-  TensorRefF br = RandomTensorRef({3}, {0}, 1, 10);
-
-  // conv2d_ref1(Xr, Wr, Yr, br, 2, 2);
-  // //conv2d_ref1(Xr, Wr, Yr);
-  // std::cout << Yr.to_string("%4.0f") << std::endl;
-  // std::cout << "Default Conv2D Implementation : " << Conv2DFactory::default_implementation() << std::endl;
-  // auto conv_impls = Conv2DFactory::implementations();
-  // std::cout << "Implementations = " << conv_impls.size() << "\n";
-  // for (auto &e : conv_impls) {
-  //   std::cout << "  " << e.second.name << " " << (e.second.default_implementation ? "default" : "not-default") << std::endl;
-  // }
   {
+    TensorRefF Xr = RandomTensorRef({1, 2, 7, 7}, {0, 0, 1, 1}, 1, 10);
+    TensorRefF Wr = RandomTensorRef({3, 2, 3, 3}, {0, 0, 0, 0}, 1, 10);
+    TensorRefF Yr = TensorRefF({1, 3, 7, 7}, {0, 0, 0, 0});
+    TensorRefF br = RandomTensorRef({3}, {0}, 1, 10);
+
     Tensor X({1, 2, 7, 7}, {0, 0, 1, 1}); // bfyx
     Tensor W({3, 2, 3, 3});
     Tensor b({3}, {0});
@@ -58,9 +49,6 @@ int main() {
     W.allocate(clContext);
     b.allocate(clContext);
     Y.allocate(clContext);
-
-    // std::string bestImpl = Conv2DFactory::best_implementation(X, W, sy_same);
-    // std::vector<ProfilingInfo> profilingInfo = Conv2DFactory::profiling_list(X, W, sy_same);
 
     std::cout << "Executing " << "Conv2DNaive" << std::endl;
     Conv2D conv2d("Conv2DNaive", clContext, X, Y, W, b, sy_same);
@@ -93,10 +81,11 @@ int main() {
     Tensor X(Size{1, 3}); // yx
     Tensor W(Size{3, 4}); // yx
     Tensor b(Size{4});
-    Tensor Y(Size{1, 4});
+    Tensor Y(Size{1, 4}); // yx
 
     std::cout << "Output shape = " << Dense::output_shape(X, W) << std::endl;
-    std::cout << "Input type size = " << Dense::input_type("DenseNaive").size() << std::endl;
+    for (auto& e : Dense::input_type("DenseNaive"))
+      std::cout << "Type = " << e << std::endl;
 
     X.allocate(clContext);
     W.allocate(clContext);
@@ -128,21 +117,6 @@ int main() {
     Y.map<float>(clQueue, true, CL_MAP_READ, nullptr, nullptr, &err);
     std::cout <<"Y = " << Y.to_string<float>("%4.0f", true) << std::endl;
   }
-
-  // std::cout << "Executing " << "Conv2D_bfyx_os_iyx_osv16" << std::endl;
-  // Tensor Y1(Conv2D::output_shape(X, W, sy_same));
-  // Conv2D conv2d1("Conv2D_bfyx_os_iyx_osv16", clContext, X, Y1, W, b, sy_same);
-  // conv2d1.compile();
-
-  // Y1.allocate(clContext);
-  // conv2d1.set_arguments();
-
-  // err = conv2d1.enqueue(clQueue);
-  // clQueue.finish();
-
-  // Y1.map<float>(clQueue, true, CL_MAP_READ, nullptr, nullptr, &err);
-  // std::cout << Y1.to_string<float>("%4.0f", true) << std::endl;
-
 
 // Graph API-------------------------------------------------------------------------------------------------------
 // General ConvNet

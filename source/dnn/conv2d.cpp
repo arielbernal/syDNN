@@ -7,14 +7,13 @@
 namespace sylib {
 namespace dnn {
 
-// Operation constructor
 Conv2D::Conv2D(const std::string& name, const cl::Context& context, const Tensor& input, const Tensor& output,
             const Tensor& weights, const Tensor& bias, const Padding& padding,
             const Size& stride, const Size& dilation)
 : Operation(Conv2DFactory::create(name, context, input, output, weights, bias, padding, stride, dilation))
 {}
 
-// Specific Operation functions
+// General methods
 Size Conv2D::output_shape(const Tensor& input, const Tensor& weights,
             const Padding& padding, const Size& stride, const Size& dilation)
 {
