@@ -8,6 +8,10 @@
 #include <test_common.hpp>
 
 int main() {
+
+ // int* p = malloc(20);
+  int foo = 0;
+  void *t = malloc(10);
   using namespace sylib;
   using namespace sylib::dnn;
   using namespace sylib::test;

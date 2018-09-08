@@ -49,8 +49,7 @@ public:
     std::stringstream ret;
     ret << "Tensor shape = " << _shape << ", padding = " << _padding << ", alignment = " << _alignment << ", ";
     ret << type_name(_type) << ", ";
-    ret << (allocated() ? "allocated" : "not-allocated") << ", ";
-    ret << (mapped() ? "mapped" : "unmapped");
+    ret << (allocated() ? "allocated" : "not-allocated");
     return ret.str();
   }
 
@@ -67,7 +66,18 @@ public:
   size_t buffer_size() const { return _buffer_size; }
   size_t dim() const { return _N; }
   bool allocated() const { return _allocated; }
-  bool mapped() const { return _mapped_ptr != nullptr; }
+
+  // provided for debugging. The map count returned should be considered immediately stale.
+  // by OpenCL 1.2 spec
+  size_t map_count() const {
+    size_t ret = 0;
+    if (allocated()) {
+      ret = _buffer.getInfo<CL_MEM_MAP_COUNT>();
+      std::cout << "Buffer reference count = " << _buffer.getInfo<CL_MEM_REFERENCE_COUNT>() <<"\n";
+      std::cout << "Buffer map count = " << _buffer.getInfo<CL_MEM_MAP_COUNT>() <<"\n";
+    }
+    return ret;
+  }
 
   operator bool() const { return _N > 0; }
   cl::Buffer operator()() const { return _buffer; }
@@ -75,8 +85,6 @@ public:
     _buffer = buffer;
     _allocated = true;
   }
-
-
 
   template<typename T = void>
   T* mapped_ptr() { return static_cast<T*>(_mapped_ptr); }
@@ -93,8 +101,6 @@ public:
   template<typename T = void>
   T* map(cl::CommandQueue q, bool blocking = true, cl_map_flags flags = CL_MAP_WRITE,
               const std::vector<cl::Event>* events = nullptr, cl::Event* event = nullptr, cl_int* err = nullptr) {
-    if (_mapped_ptr != nullptr)
-      throw std::runtime_error("Tensor::map");
     cl_int error;
     _mapped_ptr = static_cast<uint8_t*>(q.enqueueMapBuffer(_buffer, blocking, flags, 0, _buffer_size, events, event, &error));
     _mapped_flags = flags;

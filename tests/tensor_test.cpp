@@ -55,7 +55,7 @@ TEST(Tensor_test, map) {
   cl_int err = CL_TRUE;
   void* ptr = t.map(clQueue);
   ASSERT_EQ((void*)&v[0], ptr);
-  ASSERT_EQ(t.mapped(), true);
+  ASSERT_EQ(t.map_count(), 1);
 }
 
 TEST(Tensor_test, unmap) {
@@ -65,17 +65,41 @@ TEST(Tensor_test, unmap) {
   float* ptr = t.map<float>(clQueue);
   ASSERT_EQ(&v[0], ptr);
   t.unmap(clQueue);
-  ASSERT_EQ(t.mapped(), false);
+  ASSERT_EQ(t.map_count(), 0);
 }
 
 TEST(Tensor_test, unmap_write) {
   Tensor t(Size{3, 3});
   t.allocate(clContext, CL_MEM_READ_WRITE);
   float* ptr1 = t.map<float>(clQueue, true, CL_MAP_WRITE);
-  ASSERT_EQ(t.mapped(), true);
+  ASSERT_EQ(t.map_count(), 1);
   ptr1[6] = 33;
   t.unmap(clQueue);
-  ASSERT_EQ(t.mapped(), false);
+  ASSERT_EQ(t.map_count(), 0);
   float* ptr2 = t.map<float>(clQueue);
   ASSERT_EQ(ptr2[6], 33);
+}
+
+
+TEST(Tensor_test, copy_contructor) {
+  Tensor t(Size{3, 3});
+  t.allocate(clContext, CL_MEM_READ_WRITE);
+  float* ptr1 = t.map<float>(clQueue, true, CL_MAP_WRITE);
+  ptr1[6] = 33;
+  t.unmap(clQueue);
+  float* ptr2 = t.map<float>(clQueue);
+  ASSERT_EQ(ptr2[6], 33);
+  ASSERT_EQ(ptr1, ptr2);
+  t.map_count();
+  Tensor f = t;
+  t.map_count();
+  f.map_count();
+  t.unmap(clQueue);
+  std::cout << "T = " << t << std::endl;
+  std::cout << "F = " << f << std::endl;
+  t.map_count();
+  f.map_count();
+  // cl::Buffer b(clContext, CL_MEM_READ_WRITE, _buffer_size, host_ptr, &error);
+
+
 }
