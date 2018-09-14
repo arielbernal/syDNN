@@ -62,7 +62,7 @@ int main() {
     X.map(clQueue, false);
     W.map(clQueue, false);
     b.map(clQueue);
-    X.copy((void*)Xr.data());
+    //X.copy((void*)Xr.data());
     W.copy((void*)Wr.data());
     b.copy((void*)br.data());
     X.unmap(clQueue);

@@ -198,7 +198,7 @@ private:
   uint8_t* _mapped_ptr = nullptr;
 };
 
-inline void setTensorValues(Tensor& t, int start, int end) {
+inline void random_values(Tensor& t, int start, int end) {
   std::default_random_engine generator;
   std::uniform_int_distribution<int> distribution(start, end);
   std::stack<size_t> st;
