@@ -80,26 +80,30 @@ TEST(Tensor_test, unmap_write) {
   ASSERT_EQ(ptr2[6], 33);
 }
 
-
 TEST(Tensor_test, copy_contructor) {
   Tensor t(Size{3, 3});
   t.allocate(clContext, CL_MEM_READ_WRITE);
   float* ptr1 = t.map<float>(clQueue, true, CL_MAP_WRITE);
   ptr1[6] = 33;
   t.unmap(clQueue);
-  float* ptr2 = t.map<float>(clQueue);
-  ASSERT_EQ(ptr2[6], 33);
-  ASSERT_EQ(ptr1, ptr2);
-  t.map_count();
   Tensor f = t;
-  t.map_count();
-  f.map_count();
+  float* ptr2 = f.map<float>(clQueue, true, CL_MAP_READ);
+  ASSERT_EQ(ptr2[6], 33);
+}
+
+void reference_test(Tensor& t) {
+  float* ptr = t.map<float>(clQueue);
+  ptr[6] = 44;
   t.unmap(clQueue);
-  std::cout << "T = " << t << std::endl;
-  std::cout << "F = " << f << std::endl;
-  t.map_count();
-  f.map_count();
-  // cl::Buffer b(clContext, CL_MEM_READ_WRITE, _buffer_size, host_ptr, &error);
+}
 
-
+TEST(Tensor_test, reference_argument) {
+  Tensor t(Size{3, 3});
+  t.allocate(clContext, CL_MEM_READ_WRITE);
+  float* ptr1 = t.map<float>(clQueue);
+  ptr1[6] = 33;
+  t.unmap(clQueue);
+  reference_test(t);
+  float* ptr2 = t.map<float>(clQueue);
+  ASSERT_EQ(ptr2[6], 44);
 }

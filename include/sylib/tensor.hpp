@@ -2,6 +2,8 @@
 
 #include <iterator>
 #include <iostream>
+#include <random>
+#include <stack>
 #include <CL/cl.hpp>
 #include <sylib/sylibdef.hpp>
 #include <sylib/size.hpp>
@@ -10,7 +12,7 @@ namespace sylib {
 
 class Tensor {
 public:
-  Tensor() : _type(Type::sy_fp32), _N(0), _allocated(false) {}
+  Tensor() : _type(Type::sy_fp32), _dim(0), _allocated(false) {}
 
   Tensor(const Size& shape, const Size& padding, const Size& alignment, Type type = Type::sy_fp32)
   : _shape(shape)
@@ -18,7 +20,7 @@ public:
   , _alignment(alignment)
   , _internal(align(shape + 2 * padding, alignment))
   , _type(type)
-  , _N(shape.size())
+  , _dim(shape.size())
   {
     update_buffer_layout();
   }
@@ -36,7 +38,7 @@ public:
     _padding = padding.size() == 0 ? Size::Zeros(shape.size()) : padding;
     _alignment = alignment.size() == 0 ? Size::Fill(shape.size(), 1) : alignment;
     _internal = align(_shape + 2 * _padding, _alignment);
-    _N = _shape.size();
+    _dim = _shape.size();
     update_buffer_layout();
   }
 
@@ -50,6 +52,7 @@ public:
     ret << "Tensor shape = " << _shape << ", padding = " << _padding << ", alignment = " << _alignment << ", ";
     ret << type_name(_type) << ", ";
     ret << (allocated() ? "allocated" : "not-allocated");
+    ret << " " << _buffer() << std::endl;
     return ret.str();
   }
 
@@ -64,22 +67,15 @@ public:
   int32_t pitch(size_t idx) const { return _pitch[idx]; }
   int32_t internal(size_t idx) const { return _internal[idx]; }
   size_t buffer_size() const { return _buffer_size; }
-  size_t dim() const { return _N; }
+  size_t dim() const { return _dim; }
   bool allocated() const { return _allocated; }
 
-  // provided for debugging. The map count returned should be considered immediately stale.
-  // by OpenCL 1.2 spec
-  size_t map_count() const {
-    size_t ret = 0;
-    if (allocated()) {
-      ret = _buffer.getInfo<CL_MEM_MAP_COUNT>();
-      std::cout << "Buffer reference count = " << _buffer.getInfo<CL_MEM_REFERENCE_COUNT>() <<"\n";
-      std::cout << "Buffer map count = " << _buffer.getInfo<CL_MEM_MAP_COUNT>() <<"\n";
-    }
-    return ret;
-  }
+  // provided for debugging. The map count returned should be considered immediately stale. OpenCL 1.2 spec
+  size_t map_count() const {  return allocated() ? _buffer.getInfo<CL_MEM_MAP_COUNT>() : 0; }
+  // provided for debugging. The reference count returned should be considered immediately stale. OpenCL 1.2 spec
+  size_t ref_count() const {  return allocated() ? _buffer.getInfo<CL_MEM_REFERENCE_COUNT>() : 0; }
 
-  operator bool() const { return _N > 0; }
+  operator bool() const { return _dim > 0; }
   cl::Buffer operator()() const { return _buffer; }
   void operator()(cl::Buffer& buffer) {
     _buffer = buffer;
@@ -90,8 +86,6 @@ public:
   T* mapped_ptr() { return static_cast<T*>(_mapped_ptr); }
 
   void allocate(cl::Context context, cl_mem_flags flags = CL_MEM_READ_WRITE, void* host_ptr = nullptr, cl_int* err = nullptr) {
-    if (_allocated)
-      throw std::runtime_error("Tensor::allocate");
     cl_int error;
     _buffer = cl::Buffer(context, flags, _buffer_size, host_ptr, &error);
     _allocated = (error == CL_SUCCESS);
@@ -110,10 +104,7 @@ public:
 
   cl_int unmap(cl::CommandQueue q, const std::vector<cl::Event>* events = nullptr, cl::Event* event = nullptr) {
     cl_int err = CL_SUCCESS;
-    if (_mapped_ptr != nullptr) {
-      err = q.enqueueUnmapMemObject(_buffer, _mapped_ptr, events, event);
-      _mapped_ptr = nullptr;
-    }
+    err = q.enqueueUnmapMemObject(_buffer, _mapped_ptr, events, event);
     return err;
   }
 
@@ -157,7 +148,7 @@ public:
 
   template<typename T>
   std::string to_string(const std::string& format, bool internal = false, size_t n = 0, size_t idx = 0) {
-    if (n == _N) {
+    if (n == _dim) {
       char str[100];
       snprintf(str, 100, format.c_str(), reinterpret_cast<T*>(_mapped_ptr)[idx]);
       return std::string(str) + " " ;
@@ -172,13 +163,16 @@ public:
     return ret + "\n";
   }
 
+
+
+
 protected:
   void update_buffer_layout() {
     if (_internal.size() > 0) {
       _pitch = Size::Zeros(_internal.size());
-      _pitch[_N - 1] = 1;
-      _buffer_size = type_size(_type) * _internal[_N - 1];
-      for (int i = _N - 2 ; i >= 0 ; --i) {
+      _pitch[_dim - 1] = 1;
+      _buffer_size = type_size(_type) * _internal[_dim - 1];
+      for (int i = _dim - 2 ; i >= 0 ; --i) {
         _pitch[i] = _pitch[i + 1] * _internal[i + 1];
         _buffer_size *= _internal[i];
       }
@@ -187,12 +181,14 @@ protected:
     }
   }
 private:
+  Tensor& operator=(const Tensor&) = delete;
+
   Size _shape;
   Size _padding;
   Size _alignment;
   Size _internal;
   Type _type;
-  size_t _N;
+  size_t _dim;
 
   Size _pitch;
   size_t _buffer_size;
@@ -201,5 +197,34 @@ private:
   cl_map_flags _mapped_flags = CL_MAP_READ;
   uint8_t* _mapped_ptr = nullptr;
 };
+
+inline void setTensorValues(Tensor& t, int start, int end) {
+  std::default_random_engine generator;
+  std::uniform_int_distribution<int> distribution(start, end);
+  std::stack<size_t> st;
+  int n = t.dim() - 1;
+  st.push(0);
+  Size shape = t.shape();
+  Size p = Size::Zeros(shape.size());
+  while(!st.empty()) {
+    int i = st.top();
+    if (p[i] < shape[i] && i < n) {
+      st.push(i + 1);
+    } else {
+      if (i == n) {
+        for (int x = 0; x < shape[i]; ++x) {
+          p[i] = x;
+          t.at<float>(p) = distribution(generator);
+        }
+      }
+      p[i] = 0;
+      st.pop();
+      if (!st.empty()) {
+        int j = st.top();
+        p[j]++;
+      }
+    }
+  };
+}
 
 } // namespace sylib
